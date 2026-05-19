@@ -1,103 +1,103 @@
-// ajoute un message dans le chat (user ou bot)
 export function addMessage(text, type, messages) {
-    const msg = document.createElement("div");
-    msg.classList.add("message", type);
-    msg.textContent = text;
 
-    messages.appendChild(msg);
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("message", type);
 
-    scrollToBottom(messages, true);
+    const content = document.createElement("div");
+    content.classList.add("message-content");
 
-    return msg;
+    content.innerHTML = marked.parse(text);
+
+    wrapper.appendChild(content);
+
+    if (type === "bot") {
+
+        const actions = document.createElement("div");
+        actions.classList.add("message-actions");
+
+        const btn = document.createElement("button");
+        btn.classList.add("copy-btn");
+        btn.type = "button";
+        btn.textContent = "Copier";
+
+        btn.addEventListener("click", async () => {
+
+            await navigator.clipboard.writeText(content.innerText);
+
+            btn.textContent = "Copié ✔";
+
+            setTimeout(() => {
+                btn.textContent = "Copier";
+            }, 1200);
+        });
+
+        actions.appendChild(btn);
+        wrapper.appendChild(actions);
+    }
+
+    messages.appendChild(wrapper);
+    scrollToBottom(messages);
+
+    return wrapper;
 }
 
-// active ou désactive l’input et le bouton (pendant chargement par exemple)
-export function setLoadingState(input, button, state) {
+export function setLoadingState(input, button, uploadBtn, state) {
+
     input.disabled = state;
     button.disabled = state;
 
-    if (!state) {
-        input.focus();
-    }
+    if (uploadBtn) uploadBtn.disabled = state;
+
+    if (!state) input.focus();
 }
 
-// gère le scroll automatique vers le bas du chat
-export function scrollToBottom(messages, force = false) {
-    const isNearBottom =
-        messages.scrollHeight - messages.scrollTop - messages.clientHeight < 100;
-
-    if (force || isNearBottom) {
-        messages.scrollTop = messages.scrollHeight;
-    }
+export function scrollToBottom(messages) {
+    messages.scrollTop = messages.scrollHeight;
 }
 
-// affiche la réponse du bot avec effet de frappe (typewriter)
-export function typeEffect(element, text, input, button) {
-    let i = 0;
-    element.textContent = "";
-
-    input.disabled = true;
-    button.disabled = true;
-
-    function type() {
-        if (i < text.length) {
-            element.textContent += text.charAt(i);
-            i++;
-            setTimeout(type, 8);
-        } else {
-
-            // fin de l’écriture
-            input.disabled = false;
-            button.disabled = false;
-            input.focus();
-
-            // ajout du bouton copier
-            addCopyButton(element, text);
-        }
-
-        scrollToBottom(element.parentElement, false);
-    }
-
-    type();
-}
-
-// crée l’indicateur de chargement (les 3 points animés)
 export function createTypingIndicator(messages) {
-    const el = document.createElement("div");
-    el.classList.add("message", "bot", "typing");
 
-    el.innerHTML = `
-        <span class="dot"></span>
-        <span class="dot"></span>
-        <span class="dot"></span>
-    `;
+    const el = document.createElement("div");
+    el.classList.add("message", "bot");
+
+    el.textContent = "IA écrit...";
 
     messages.appendChild(el);
-
-    scrollToBottom(messages, true);
+    scrollToBottom(messages);
 
     return el;
 }
 
-// bouton copier (nouveau)
-function addCopyButton(element, text) {
+export function typeEffect(element, text, input, button, uploadBtn) {
 
-    const btn = document.createElement("button");
+    let i = 0;
+    let currentText = "";
 
-    btn.classList.add("copy-btn");
+    element.innerHTML = "";
 
-    btn.textContent = "Copier";
+    function type() {
 
-    btn.addEventListener("click", () => {
-        navigator.clipboard.writeText(text);
+        if (i < text.length) {
 
-        btn.textContent = "Copié !";
+            currentText += text.slice(i, i + 2); // plus fluide que 3
 
-        setTimeout(() => {
-            btn.textContent = "Copier";
-        }, 1200);
-    });
+            element.innerHTML = marked.parse(currentText);
 
-    element.appendChild(document.createElement("br"));
-    element.appendChild(btn);
+            i += 2;
+
+            scrollToBottom(element.parentElement);
+
+            setTimeout(type, 8);
+
+        } else {
+
+            input.disabled = false;
+            button.disabled = false;
+            if (uploadBtn) uploadBtn.disabled = false;
+
+            input.focus();
+        }
+    }
+
+    type();
 }

@@ -1,53 +1,85 @@
-import { sendMessageAPI } from "./api.js";
-import { addMessage, setLoadingState, typeEffect, createTypingIndicator } from "./ui.js";
+import { sendMessageAPI, uploadFileAPI } from "./api.js";
+import {
+    addMessage,
+    setLoadingState,
+    typeEffect,
+    createTypingIndicator
+} from "./ui.js";
+
+import { selectedFile } from "./upload.js";
 
 document.addEventListener("DOMContentLoaded", () => {
 
     const input = document.getElementById("user-input");
     const button = document.getElementById("send-btn");
+    const uploadBtn = document.getElementById("upload-btn");
     const messages = document.getElementById("messages");
 
-    // auto-resize
+    const MIN_HEIGHT = 46;
+    const MAX_HEIGHT = 120;
+
     function autoResize() {
+
         input.style.height = "auto";
-        input.style.height = Math.min(input.scrollHeight, 120) + "px";
+
+        const scrollHeight = input.scrollHeight;
+
+        const newHeight = Math.min(Math.max(scrollHeight, MIN_HEIGHT), MAX_HEIGHT);
+
+        input.style.height = newHeight + "px";
     }
 
     input.addEventListener("input", autoResize);
 
     async function sendMessage() {
-        const text = input.value.trim();
-        if (!text) return;
 
-        addMessage(text, "user", messages);
+        const text = input.value.trim();
+
+        if (!text && !selectedFile) return;
+
+        if (text) {
+            addMessage(text, "user", messages);
+        }
 
         input.value = "";
-
-        // reset hauteur après envoi (IMPORTANT UX)
-        input.style.height = "auto";
+        input.style.height = MIN_HEIGHT + "px";
 
         const loadingMsg = createTypingIndicator(messages);
 
-        setLoadingState(input, button, true);
+        setLoadingState(input, button, uploadBtn, true);
 
-        const response = await sendMessageAPI(text);
-        const safeResponse = response || "Erreur : réponse vide";
+        let fileData = null;
 
-        typeEffect(loadingMsg, safeResponse, input, button);
+        if (selectedFile) {
+            fileData = await uploadFileAPI(selectedFile);
+        }
+
+        const response = await sendMessageAPI(text, fileData);
+
+        const safeResponse =
+            response?.answer ||
+            response?.response ||
+            response?.message ||
+            response?.result ||
+            response ||
+            "Erreur : réponse vide";
+
+        typeEffect(
+            loadingMsg,
+            String(safeResponse),
+            input,
+            button,
+            uploadBtn
+        );
     }
 
-    // click
     button.addEventListener("click", sendMessage);
 
-    // enter + shift+enter
     input.addEventListener("keydown", (e) => {
+
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             sendMessage();
-
-            // reset UX propre
-            input.style.height = "auto";
         }
     });
-
 });

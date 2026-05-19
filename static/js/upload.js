@@ -1,3 +1,5 @@
+export let selectedFile = null;
+
 document.addEventListener("DOMContentLoaded", () => {
 
     const uploadBtn = document.getElementById("upload-btn");
@@ -12,8 +14,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.body.appendChild(fileInput);
 
-    let selectedFile = null;
-
     // ouvrir explorer
     uploadBtn.addEventListener("click", () => {
         fileInput.click();
@@ -21,25 +21,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // sélection fichier
     fileInput.addEventListener("change", () => {
-
         const file = fileInput.files[0];
         if (!file) return;
 
         selectedFile = file;
 
         fileName.textContent = file.name;
-
         filePreview.style.display = "flex";
     });
 
     // supprimer fichier
     removeFileBtn.addEventListener("click", () => {
-
         selectedFile = null;
-
         fileInput.value = "";
-
         filePreview.style.display = "none";
     });
-
 });
