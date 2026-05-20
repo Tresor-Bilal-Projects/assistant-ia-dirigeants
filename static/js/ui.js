@@ -6,9 +6,15 @@ export function addMessage(text, type, messages) {
     const content = document.createElement("div");
     content.classList.add("message-content");
 
-    content.innerHTML = marked.parse(text);
+    if (type === "bot") {
+        content.innerHTML = marked.parse(text);
+    } else {
+        content.textContent = text;
+    }
 
     wrapper.appendChild(content);
+
+    /* COPY BUTTON ONLY FOR BOT */
 
     if (type === "bot") {
 
@@ -22,13 +28,23 @@ export function addMessage(text, type, messages) {
 
         btn.addEventListener("click", async () => {
 
-            await navigator.clipboard.writeText(content.innerText);
+            try {
 
-            btn.textContent = "Copié ✔";
+                await navigator.clipboard.writeText(
+                    content.innerText.trim()
+                );
 
-            setTimeout(() => {
-                btn.textContent = "Copier";
-            }, 1200);
+                btn.textContent = "Copié ✔";
+                btn.classList.add("copied");
+
+                setTimeout(() => {
+                    btn.textContent = "Copier";
+                    btn.classList.remove("copied");
+                }, 1200);
+
+            } catch (err) {
+                console.error(err);
+            }
         });
 
         actions.appendChild(btn);
@@ -36,9 +52,13 @@ export function addMessage(text, type, messages) {
     }
 
     messages.appendChild(wrapper);
+
     scrollToBottom(messages);
 
-    return wrapper;
+    return {
+        wrapper,
+        content
+    };
 }
 
 export function setLoadingState(input, button, uploadBtn, state) {
@@ -68,32 +88,42 @@ export function createTypingIndicator(messages) {
     return el;
 }
 
-export function typeEffect(element, text, input, button, uploadBtn) {
+export function typeEffect(
+    contentElement,
+    text,
+    input,
+    button,
+    uploadBtn
+) {
 
     let i = 0;
     let currentText = "";
-
-    element.innerHTML = "";
 
     function type() {
 
         if (i < text.length) {
 
-            currentText += text.slice(i, i + 2); // plus fluide que 3
+            currentText += text.slice(i, i + 2);
 
-            element.innerHTML = marked.parse(currentText);
+            contentElement.innerHTML =
+                marked.parse(currentText);
 
             i += 2;
 
-            scrollToBottom(element.parentElement);
+            scrollToBottom(
+                contentElement.closest("#messages")
+            );
 
-            setTimeout(type, 8);
+            requestAnimationFrame(type);
 
         } else {
 
             input.disabled = false;
             button.disabled = false;
-            if (uploadBtn) uploadBtn.disabled = false;
+
+            if (uploadBtn) {
+                uploadBtn.disabled = false;
+            }
 
             input.focus();
         }

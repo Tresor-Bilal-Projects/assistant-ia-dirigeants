@@ -1,4 +1,4 @@
-#  README — Assistant IA pour dirigeants
+# Assistant IA pour dirigeants
 
 ---
 
@@ -14,11 +14,11 @@ Le système repose actuellement sur une intégration d’un modèle de langage v
 
 ## 2. Objectif du projet
 
-* Créer un assistant IA pour la prise de décision en entreprise
-* Fournir une interface conversationnelle type SaaS
-* Permettre l’analyse de questions stratégiques
-* Préparer l’intégration de documents internes (RAG)
-* Évoluer vers un produit IA utilisable en environnement professionnel
+- Créer un assistant IA pour la prise de décision en entreprise
+- Fournir une interface conversationnelle type SaaS
+- Permettre l’analyse de questions stratégiques
+- Préparer l’intégration de documents internes (RAG)
+- Évoluer vers un produit IA utilisable en environnement professionnel
 
 ---
 
@@ -28,24 +28,34 @@ Le projet est actuellement en phase :
 
 > **MVP fonctionnel avec assistant IA connecté**
 
+---
+
 ### ✔ Backend (fonctionnel)
 
-* API `/chat` opérationnelle
-* Intégration Hugging Face Router API
-* Génération de réponses IA
-* Gestion des erreurs de base
-* Structure modulaire en Python
+- API `/chat` opérationnelle
+- Intégration Hugging Face Router API
+- Génération de réponses IA
+- Gestion des erreurs de base
+- Structure modulaire en Python
 
-### ⚠ Frontend (en cours d’amélioration)
+---
 
-* Interface chat type SaaS (ChatGPT-like)
-* Messages utilisateur / assistant fonctionnels
-* Animation de réponse (typing effect)
-* Auto-scroll des messages
-* Auto-resize textarea (fonctionnel mais instable selon certains cas)
-* Upload de fichiers côté frontend (non connecté backend)
-* Bouton copier (fonctionnel mais affichage perfectible)
-* UX globale en phase de stabilisation
+### ⚠ Frontend (amélioré récemment / en stabilisation)
+
+Le frontend a reçu une **refonte et plusieurs correctifs UX/UI récents** :
+
+- Interface chat type SaaS (ChatGPT-like)
+- Refonte CSS vers un style plus moderne et dark SaaS
+- Stabilisation du système de messages (DOM + rendering)
+- Correction du système de typing effect
+- Amélioration du rendu Markdown (titres, listes, code blocks)
+- Auto-scroll des messages amélioré
+- Auto-resize textarea corrigé (comportement plus fluide)
+- Correction du positionnement du bouton envoyer
+- Bouton copier stabilisé :
+  - visible uniquement sur messages bot
+  - copie du texte propre (sans HTML / markdown)
+- Amélioration générale de la cohérence UX
 
 ---
 
@@ -54,46 +64,41 @@ Le projet est actuellement en phase :
 ### Backend (Flask)
 
 **Technologies :**
-
-* Python
-* Flask
-* Hugging Face Router API
-* dotenv
+- Python
+- Flask
+- Hugging Face Router API
+- dotenv
 
 **Rôle :**
-
-* gestion des routes API
-* communication avec le modèle IA
-* traitement des messages utilisateur
-* retour des réponses JSON
+- gestion des routes API
+- communication avec le modèle IA
+- traitement des messages utilisateur
+- retour des réponses JSON
 
 **Endpoint principal :**
-
-* `/chat`
+- `/chat`
 
 ---
 
 ### Frontend
 
 **Technologies :**
-
-* HTML
-* CSS
-* JavaScript (modularisé)
+- HTML
+- CSS
+- JavaScript (modularisé)
 
 **Rôle :**
-
-* interface utilisateur type SaaS
-* envoi des messages vers l’API `/chat`
-* affichage dynamique des réponses IA
-* gestion UX (loading, typing, scroll)
+- interface utilisateur type SaaS
+- envoi des messages vers l’API `/chat`
+- affichage dynamique des réponses IA
+- gestion UX (loading, typing, scroll)
 
 ---
 
 ## 5. Modèle IA utilisé
 
-* Hugging Face Router API
-* Modèle : `meta-llama/Llama-3.1-8B-Instruct`
+- Hugging Face Router API
+- Modèle : `meta-llama/Llama-3.1-8B-Instruct`
 
 Ce modèle est utilisé pour générer des réponses conversationnelles adaptées à un assistant professionnel.
 
@@ -101,10 +106,10 @@ Ce modèle est utilisé pour générer des réponses conversationnelles adaptée
 
 ## 6. Sécurité
 
-* utilisation de variables d’environnement (`.env`)
-* aucune clé API exposée dans le code
-* `.env` ignoré via `.gitignore`
-* fichier `.env.example` fourni
+- utilisation de variables d’environnement (`.env`)
+- aucune clé API exposée dans le code
+- `.env` ignoré via `.gitignore`
+- fichier `.env.example` fourni
 
 ---
 
@@ -144,7 +149,7 @@ assistant-ia-dirigeants/
 
 ├── tests/
 └── README.md
-```
+````
 
 ---
 
@@ -157,26 +162,33 @@ assistant-ia-dirigeants/
 * génération de réponses
 * gestion des erreurs
 
-### Frontend
+---
 
-* interface chat SaaS
+### Frontend (mis à jour récemment)
+
+* interface chat SaaS type ChatGPT
+* refonte CSS (UI plus moderne et stable)
 * affichage dynamique des messages
-* animation de réponse (typing)
-* auto-scroll des conversations
-* textarea avec auto-resize (à stabiliser)
+* animation de réponse (typing effect stabilisé)
+* auto-scroll conversation amélioré
+* textarea auto-resize corrigé
 * système d’upload frontend (non connecté backend)
-* bouton copier (fonctionnel mais perfectible)
+* bouton copier stable et mieux positionné
 
 ---
 
-## 9. Améliorations en cours (Frontend UX)
+## 9. Améliorations récentes (Frontend UX/UI)
 
-* stabilisation du textarea (comportement inconsistent selon input)
-* amélioration du rendu des messages
-* correction du positionnement du bouton copier
-* optimisation du scroll automatique
-* nettoyage de la structure DOM des messages
-* amélioration générale de la stabilité UI
+Travail réalisé récemment :
+
+* Refonte CSS vers un design SaaS plus moderne et sombre
+* Stabilisation du DOM des messages (moins de re-render instable)
+* Correction du typing effect (meilleure gestion du contenu dynamique)
+* Amélioration du rendu Markdown (code, listes, titres)
+* Correction du comportement du textarea (auto-resize fluide)
+* Correction du positionnement du bouton envoyer
+* Stabilisation du bouton copier (UX + affichage + copie propre)
+* Amélioration globale de la fluidité UI
 
 ---
 
@@ -190,13 +202,15 @@ assistant-ia-dirigeants/
 * extraction PDF / TXT
 * intégration RAG (documents internes)
 
+---
+
 ### Frontend
 
-* stabilisation complète UI
 * sidebar historique des conversations
-* dark mode
+* dark mode avancé
 * amélioration UX type SaaS mature
 * connexion upload frontend ↔ backend
+* micro-interactions UI (niveau produit)
 
 ---
 
@@ -249,7 +263,11 @@ python app.py
 
 ## 13. Conclusion
 
-Le projet est actuellement un **MVP fonctionnel** avec une base solide côté backend.
+Le projet est actuellement un **MVP fonctionnel avec backend stable et frontend fortement amélioré récemment**.
 
-Le frontend est en phase d’ajustement et de stabilisation pour atteindre une expérience utilisateur fluide de type SaaS (ChatGPT-like).
+Le travail effectué a principalement renforcé la **stabilité UI/UX (type SaaS ChatGPT-like)**, notamment sur le rendu des messages, le textarea, le bouton copier et la cohérence globale de l’interface.
+
+
+
+
 

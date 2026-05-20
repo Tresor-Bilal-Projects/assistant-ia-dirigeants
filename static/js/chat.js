@@ -1,9 +1,9 @@
 import { sendMessageAPI, uploadFileAPI } from "./api.js";
+
 import {
     addMessage,
     setLoadingState,
-    typeEffect,
-    createTypingIndicator
+    typeEffect
 } from "./ui.js";
 
 import { selectedFile } from "./upload.js";
@@ -18,18 +18,36 @@ document.addEventListener("DOMContentLoaded", () => {
     const MIN_HEIGHT = 46;
     const MAX_HEIGHT = 120;
 
+    /* =========================
+       TEXTAREA AUTO RESIZE
+    ========================= */
+
     function autoResize() {
 
-        input.style.height = "auto";
+        input.style.height = MIN_HEIGHT + "px";
 
-        const scrollHeight = input.scrollHeight;
-
-        const newHeight = Math.min(Math.max(scrollHeight, MIN_HEIGHT), MAX_HEIGHT);
+        const newHeight = Math.min(
+            input.scrollHeight,
+            MAX_HEIGHT
+        );
 
         input.style.height = newHeight + "px";
+
+        input.style.overflowY =
+            input.scrollHeight > MAX_HEIGHT
+                ? "auto"
+                : "hidden";
     }
 
     input.addEventListener("input", autoResize);
+
+    /* init height */
+
+    autoResize();
+
+    /* =========================
+       SEND MESSAGE
+    ========================= */
 
     async function sendMessage() {
 
@@ -37,48 +55,103 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!text && !selectedFile) return;
 
+        /* USER MESSAGE */
+
         if (text) {
             addMessage(text, "user", messages);
         }
 
+        /* RESET INPUT */
+
         input.value = "";
+
         input.style.height = MIN_HEIGHT + "px";
 
-        const loadingMsg = createTypingIndicator(messages);
+        autoResize();
 
-        setLoadingState(input, button, uploadBtn, true);
+        /* BOT PLACEHOLDER */
 
-        let fileData = null;
+        const loading = addMessage("", "bot", messages);
 
-        if (selectedFile) {
-            fileData = await uploadFileAPI(selectedFile);
-        }
-
-        const response = await sendMessageAPI(text, fileData);
-
-        const safeResponse =
-            response?.answer ||
-            response?.response ||
-            response?.message ||
-            response?.result ||
-            response ||
-            "Erreur : réponse vide";
-
-        typeEffect(
-            loadingMsg,
-            String(safeResponse),
+        setLoadingState(
             input,
             button,
-            uploadBtn
+            uploadBtn,
+            true
         );
+
+        try {
+
+            let fileData = null;
+
+            /* FILE UPLOAD */
+
+            if (selectedFile) {
+                fileData = await uploadFileAPI(selectedFile);
+            }
+
+            /* API CALL */
+
+            const response = await sendMessageAPI(
+                text,
+                fileData
+            );
+
+            /* SAFE RESPONSE */
+
+            const safeResponse =
+                response?.answer ||
+                response?.response ||
+                response?.message ||
+                response?.result ||
+                response ||
+                "Erreur : réponse vide";
+
+            /* TYPE EFFECT */
+
+            typeEffect(
+                loading.content,
+                String(safeResponse),
+                input,
+                button,
+                uploadBtn
+            );
+
+        } catch (err) {
+
+            console.error(err);
+
+            loading.content.innerHTML = `
+                <p style="color:red;">
+                    Une erreur est survenue.
+                </p>
+            `;
+
+            setLoadingState(
+                input,
+                button,
+                uploadBtn,
+                false
+            );
+        }
     }
 
+    /* =========================
+       BUTTON CLICK
+    ========================= */
+
     button.addEventListener("click", sendMessage);
+
+    /* =========================
+       ENTER / SHIFT+ENTER
+    ========================= */
 
     input.addEventListener("keydown", (e) => {
 
         if (e.key === "Enter" && !e.shiftKey) {
+
             e.preventDefault();
+
             sendMessage();
         }
     });
