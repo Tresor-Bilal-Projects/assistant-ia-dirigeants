@@ -3,7 +3,7 @@ import requests
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 
-# charger les variables .env
+# LOAD ENV
 load_dotenv()
 
 app = Flask(__name__)
@@ -16,6 +16,45 @@ headers = {
     "Content-Type": "application/json"
 }
 
+# SYSTEM PROMPT
+
+SYSTEM_PROMPT = """
+Tu es un assistant IA avancé destiné à des dirigeants et professionnels.
+
+Ton rôle est d’aider à la réflexion, à la prise de décision et à l’analyse stratégique, mais avec un ton naturel et humain.
+
+=========================
+COMPORTEMENT ATTENDU
+=========================
+
+- Si l’utilisateur salue (bonjour, salut, merci) :
+  → répondre naturellement et brièvement
+  → ne pas forcer une analyse business
+
+- Si la demande est vague :
+  → poser une question claire et simple
+
+- Si la demande est stratégique :
+  → répondre de manière structurée et orientée décision
+
+=========================
+STYLE
+=========================
+
+- Ton naturel, fluide et humain
+- Pas de phrases robotiques type chatbot
+- Pas d’introduction inutile
+- Pas de répétition de rôle ("je suis un assistant...")
+- Adapter le niveau de détail au contexte
+
+=========================
+OBJECTIF
+=========================
+
+Aider efficacement un dirigeant sans être rigide, ni trop formel, ni trop générique.
+"""
+
+# ROUTES
 
 @app.route("/")
 def home():
@@ -24,27 +63,33 @@ def home():
 
 @app.route("/chat", methods=["POST"])
 def chat():
+
     data = request.get_json()
-    message = data.get("message")
+    message = data.get("message", "")
 
     payload = {
         "model": "meta-llama/Llama-3.1-8B-Instruct",
         "messages": [
             {
                 "role": "system",
-                "content": "Tu es un assistant IA spécialisé en stratégie d'entreprise. Tu aides des dirigeants à prendre des décisions claires, structurées et professionnelles."
+                "content": SYSTEM_PROMPT
             },
             {
                 "role": "user",
                 "content": message
             }
         ],
-        "temperature": 0.7,
+        "temperature": 0.3,
         "max_tokens": 512
     }
 
     try:
-        response = requests.post(HF_API_URL, headers=headers, json=payload)
+        response = requests.post(
+            HF_API_URL,
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
 
         print("STATUS:", response.status_code)
         print("TEXT:", response.text)
@@ -52,7 +97,7 @@ def chat():
         if response.status_code != 200:
             return jsonify({
                 "response": f"HF error HTTP {response.status_code}: {response.text}"
-            })
+            }), 500
 
         result = response.json()
 
@@ -65,7 +110,7 @@ def chat():
     except Exception as e:
         return jsonify({
             "response": f"Erreur serveur: {str(e)}"
-        })
+        }), 500
 
 
 if __name__ == "__main__":
