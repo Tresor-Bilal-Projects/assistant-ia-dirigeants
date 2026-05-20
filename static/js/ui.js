@@ -7,14 +7,20 @@ export function addMessage(text, type, messages) {
     content.classList.add("message-content");
 
     if (type === "bot") {
-        content.innerHTML = marked.parse(text);
+
+        const html = marked.parse(text || "");
+        content.innerHTML = html;
+
+        // Fix UI code blocks + copy per block
+        enhanceCodeBlocks(content);
+
     } else {
         content.textContent = text;
     }
 
     wrapper.appendChild(content);
 
-    /* COPY BUTTON ONLY FOR BOT */
+    /* COPY BUTTON GLOBAL (BOT ONLY) */
 
     if (type === "bot") {
 
@@ -31,7 +37,7 @@ export function addMessage(text, type, messages) {
             try {
 
                 await navigator.clipboard.writeText(
-                    content.innerText.trim()
+                    extractCleanText(content)
                 );
 
                 btn.textContent = "Copié ✔";
@@ -43,7 +49,7 @@ export function addMessage(text, type, messages) {
                 }, 1200);
 
             } catch (err) {
-                console.error(err);
+                console.error("Copy error:", err);
             }
         });
 
@@ -55,11 +61,10 @@ export function addMessage(text, type, messages) {
 
     scrollToBottom(messages);
 
-    return {
-        wrapper,
-        content
-    };
+    return { wrapper, content };
 }
+
+/* LOADING STATE */
 
 export function setLoadingState(input, button, uploadBtn, state) {
 
@@ -71,9 +76,13 @@ export function setLoadingState(input, button, uploadBtn, state) {
     if (!state) input.focus();
 }
 
+/* SCROLL */
+
 export function scrollToBottom(messages) {
     messages.scrollTop = messages.scrollHeight;
 }
+
+/* TYPING INDICATOR */
 
 export function createTypingIndicator(messages) {
 
@@ -88,13 +97,9 @@ export function createTypingIndicator(messages) {
     return el;
 }
 
-export function typeEffect(
-    contentElement,
-    text,
-    input,
-    button,
-    uploadBtn
-) {
+/* TYPE EFFECT (FIXED + SAFE)*/
+
+export function typeEffect(contentElement, text, input, button, uploadBtn) {
 
     let i = 0;
     let currentText = "";
@@ -105,14 +110,14 @@ export function typeEffect(
 
             currentText += text.slice(i, i + 2);
 
-            contentElement.innerHTML =
-                marked.parse(currentText);
+            contentElement.innerHTML = marked.parse(currentText || "");
+
+            // re-apply code block enhancements
+            enhanceCodeBlocks(contentElement);
 
             i += 2;
 
-            scrollToBottom(
-                contentElement.closest("#messages")
-            );
+            scrollToBottom(contentElement.closest("#messages"));
 
             requestAnimationFrame(type);
 
@@ -121,13 +126,63 @@ export function typeEffect(
             input.disabled = false;
             button.disabled = false;
 
-            if (uploadBtn) {
-                uploadBtn.disabled = false;
-            }
+            if (uploadBtn) uploadBtn.disabled = false;
 
             input.focus();
         }
     }
 
     type();
+}
+
+/* CODE BLOCK ENHANCER (CHATGPT STYLE) */
+
+function enhanceCodeBlocks(container) {
+
+    const blocks = container.querySelectorAll("pre");
+
+    blocks.forEach((pre) => {
+
+        // avoid double wrapping
+        if (pre.parentElement?.classList.contains("code-wrapper")) return;
+
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("code-wrapper");
+
+        pre.parentNode.insertBefore(wrapper, pre);
+        wrapper.appendChild(pre);
+
+        const btn = document.createElement("button");
+        btn.classList.add("code-copy-btn");
+        btn.textContent = "Copy";
+
+        btn.addEventListener("click", async () => {
+
+            try {
+                await navigator.clipboard.writeText(pre.innerText);
+
+                btn.textContent = "Copied";
+
+                setTimeout(() => {
+                    btn.textContent = "Copy";
+                }, 1200);
+
+            } catch (err) {
+                console.error("Code copy error:", err);
+            }
+        });
+
+        wrapper.appendChild(btn);
+    });
+}
+
+/* CLEAN TEXT FOR GLOBAL COPY */
+
+function extractCleanText(content) {
+
+    const clone = content.cloneNode(true);
+
+    clone.querySelectorAll("button").forEach(btn => btn.remove());
+
+    return clone.innerText.trim();
 }

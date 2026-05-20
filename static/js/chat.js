@@ -18,9 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const MIN_HEIGHT = 46;
     const MAX_HEIGHT = 120;
 
-    /* =========================
-       TEXTAREA AUTO RESIZE
-    ========================= */
+    /* TEXTAREA AUTO RESIZE */
 
     function autoResize() {
 
@@ -45,9 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     autoResize();
 
-    /* =========================
-       SEND MESSAGE
-    ========================= */
+    /* SEND MESSAGE */
 
     async function sendMessage() {
 
@@ -136,15 +132,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    /* =========================
-       BUTTON CLICK
-    ========================= */
+    /* BUTTON CLICK */
 
     button.addEventListener("click", sendMessage);
 
-    /* =========================
-       ENTER / SHIFT+ENTER
-    ========================= */
+    /* ENTER / SHIFT+ENTER */
 
     input.addEventListener("keydown", (e) => {
 
