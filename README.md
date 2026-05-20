@@ -252,12 +252,12 @@ python app.py
 
 ## 12. Répartition du travail
 
-| Membre        | Rôle                        |
-| ------------- | --------------------------- |
-| Nathan        | Backend / IA / architecture |
-| Trésor        | Frontend / UX               |
-| Pierre-Thyrel | Données / tests             |
-| Lina          | Documentation               |
+| Membre        | Rôle principal |
+|---------------|----------------|
+| Nathan        | Backend / IA (API, intégration Hugging Face, logique chat, architecture backend) |
+| Trésor        | Frontend / UX (interface chat, UI/UX, styling, interactions utilisateur) |
+| Pierre-Thyrel | Données / tests / support technique |
+| Lina          | Documentation / organisation projet |
 
 ---
 
