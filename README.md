@@ -30,32 +30,37 @@ Le projet est actuellement en phase :
 
 ---
 
-### ✔ Backend (fonctionnel)
+### ✔ Backend (stable)
 
-- API `/chat` opérationnelle
+- API `/chat` fonctionnelle
 - Intégration Hugging Face Router API
 - Génération de réponses IA
-- Gestion des erreurs de base
-- Structure modulaire en Python
+- Structure backend modulaire (Flask)
+- Gestion basique des erreurs
 
 ---
 
-### ⚠ Frontend (amélioré récemment / en stabilisation)
+### ⚠ Frontend (en cours de stabilisation UX/UI)
 
-Le frontend a reçu une **refonte et plusieurs correctifs UX/UI récents** :
+Le frontend a été récemment amélioré avec une refonte UX/UI type SaaS :
 
-- Interface chat type SaaS (ChatGPT-like)
-- Refonte CSS vers un style plus moderne et dark SaaS
-- Stabilisation du système de messages (DOM + rendering)
-- Correction du système de typing effect
-- Amélioration du rendu Markdown (titres, listes, code blocks)
-- Auto-scroll des messages amélioré
-- Auto-resize textarea corrigé (comportement plus fluide)
-- Correction du positionnement du bouton envoyer
-- Bouton copier stabilisé :
-  - visible uniquement sur messages bot
-  - copie du texte propre (sans HTML / markdown)
-- Amélioration générale de la cohérence UX
+- Interface chat type ChatGPT-like
+- Design dark SaaS modernisé
+- Affichage dynamique des messages
+- Support Markdown (titres, listes, code blocks)
+- Auto-scroll des messages
+- Auto-resize textarea
+- Typing effect stabilisé
+- Bouton copier fonctionnel sur messages bot
+- Amélioration globale de la fluidité UI
+
+---
+
+### État fonctionnel global
+
+- Chat IA entièrement fonctionnel
+- UI stable mais encore en phase d’optimisation
+- Historique des conversations : structure en place (JS modulable), non finalisé UX
 
 ---
 
@@ -145,7 +150,8 @@ assistant-ia-dirigeants/
 │   │   ├── api.js
 │   │   ├── ui.js
 │   │   ├── upload.js
-│   │   ├── app.js
+│   │   ├── conversationManager.js
+        ├── storage.js
 
 ├── tests/
 └── README.md
@@ -206,11 +212,12 @@ Travail réalisé récemment :
 
 ### Frontend
 
-* sidebar historique des conversations
-* dark mode avancé
-* amélioration UX type SaaS mature
-* connexion upload frontend ↔ backend
-* micro-interactions UI (niveau produit)
+- finalisation du système d’historique de conversations (sidebar + persistence)
+- intégration complète du `conversationManager.js`
+- connexion UI ↔ storage (localStorage)
+- dark mode avancé
+- amélioration UX type SaaS mature
+- micro-interactions UI (niveau produit)
 
 ---
 
@@ -219,7 +226,7 @@ Travail réalisé récemment :
 ### 1. Cloner le projet
 
 ```bash
-git clone https://github.com/Nathandev19/assistant-ia-dirigeants.git
+git clone https://github.com/Tresor-Bilal-Projects/assistant-ia-dirigeants.git
 cd assistant-ia-dirigeants
 ```
 
