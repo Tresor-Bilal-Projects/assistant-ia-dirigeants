@@ -2,25 +2,54 @@
 
 {% block content %}
 
-<div id="chat-box">
+<div class="app-layout">
 
-    <div id="messages"></div>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
 
-    <div id="input-area">
+        <button id="new-chat-btn">
+            + Nouveau chat
+        </button>
 
-        <button id="upload-btn">📎</button>
+        <div id="conversation-list">
 
-        <!-- zone affichage fichier -->
-        <div id="file-preview" style="display: none;">
-            <span id="file-name"></span>
-            <button id="remove-file">✖</button>
+            <!-- conversations injectées en JS -->
+
         </div>
 
-        <textarea id="user-input" placeholder="Écrire un message..."></textarea>
+    </aside>
 
-        <button id="send-btn">Envoyer</button>
+    <!-- CHAT -->
+    <section id="chat-box">
 
-    </div>
+        <div class="chat-wrapper">
+
+            <div id="messages"></div>
+
+            <div id="input-area">
+
+                <button id="upload-btn">📎</button>
+
+                <!-- preview fichier -->
+                <div id="file-preview" style="display: none;">
+                    <span id="file-name"></span>
+                    <button id="remove-file">✖</button>
+                </div>
+
+                <textarea
+                    id="user-input"
+                    placeholder="Écrire un message..."
+                ></textarea>
+
+                <button id="send-btn">
+                    Envoyer
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
 
 </div>
 
