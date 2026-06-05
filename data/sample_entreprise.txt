@@ -1,0 +1,31 @@
+DOCUMENT INTERNE — STRATÉGIE 2025-2026
+Entreprise : NovaTech Solutions (PME B2B, 45 salariés)
+
+=== VISION ===
+Devenir le partenaire de référence des PME françaises pour la digitalisation de leurs processus métiers d'ici 2027.
+
+=== PRIORITÉS STRATÉGIQUES ===
+1. Croissance du chiffre d'affaires de 18 % sur 12 mois
+2. Lancement d'une offre SaaS d'automatisation documentaire (Q3 2025)
+3. Réduction du taux de churn client de 12 % à 7 %
+4. Certification ISO 27001 pour rassurer les clients enterprise
+
+=== CHIFFRES CLÉS (T1 2025) ===
+- Chiffre d'affaires annuel : 2,4 M€
+- Marge brute : 62 %
+- Coût d'acquisition client (CAC) : 1 200 €
+- Lifetime Value (LTV) moyenne : 8 500 €
+- Nombre de clients actifs : 128
+
+=== RISQUES IDENTIFIÉS ===
+- Dépendance à 3 grands comptes (38 % du CA)
+- Retard sur le recrutement de 2 développeurs seniors
+- Concurrence accrue d'un acteur low-cost sur le segment TPE
+
+=== DÉCISIONS RÉCENTES DU COMITÉ DE DIRECTION ===
+- Report de l'expansion allemande au S1 2026 (budget réalloué au produit SaaS)
+- Mise en place d'un comité innovation mensuel
+- Budget marketing digital augmenté de 25 % pour le second semestre 2025
+
+=== OBJECTIF RH ===
+Passer de 45 à 55 collaborateurs d'ici fin 2025, avec un focus sur les profils produit et customer success.

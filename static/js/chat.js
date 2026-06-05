@@ -6,7 +6,7 @@ import {
     typeEffect
 } from "./ui.js";
 
-import { selectedFile } from "./upload.js";
+import { resetSelectedFile, selectedFile } from "./upload.js";
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -84,6 +84,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (selectedFile) {
                 fileData = await uploadFileAPI(selectedFile);
+
+                if (fileData?.error) {
+                    throw new Error(fileData.error);
+                }
+
+                resetSelectedFile();
             }
 
             /* API CALL */
@@ -95,13 +101,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
             /* SAFE RESPONSE */
 
-            const safeResponse =
+            let safeResponse =
                 response?.answer ||
                 response?.response ||
                 response?.message ||
                 response?.result ||
-                response ||
                 "Erreur : réponse vide";
+
+            if (response?.rag_used && response?.sources?.length) {
+                safeResponse += `\n\n---\n**Sources RAG :** ${response.sources.join(", ")}`;
+            }
+
+            if (fileData?.message) {
+                safeResponse = `📎 ${fileData.message}\n\n${safeResponse}`;
+            }
 
             /* TYPE EFFECT */
 

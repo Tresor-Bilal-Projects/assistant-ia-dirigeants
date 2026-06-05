@@ -1,33 +1,29 @@
 import os
-import requests
-from flask import Flask, render_template, request, jsonify
+
 from dotenv import load_dotenv
 
-# LOAD ENV
 load_dotenv()
 
+from flask import Flask, jsonify, render_template, request
+from werkzeug.utils import secure_filename
+
+from config import ALLOWED_EXTENSIONS, MAX_UPLOAD_MB, TOP_K, UPLOAD_DIR
+from modules.llm.hf_client import chat_completion
+from modules.services.ingestion import ingest_file
+from modules.services.rag import build_rag_context, build_system_prompt, rag_status
+
 app = Flask(__name__)
-
-HF_API_URL = "https://router.huggingface.co/v1/chat/completions"
-HF_TOKEN = os.getenv("HF_TOKEN")
-
-headers = {
-    "Authorization": f"Bearer {HF_TOKEN}",
-    "Content-Type": "application/json"
-}
-
-# SYSTEM PROMPT
 
 SYSTEM_PROMPT = """
 Tu es un assistant IA avancé destiné à des dirigeants et professionnels.
 
-Ton rôle est d’aider à la réflexion, à la prise de décision et à l’analyse stratégique, mais avec un ton naturel et humain.
+Ton rôle est d'aider à la réflexion, à la prise de décision et à l'analyse stratégique, mais avec un ton naturel et humain.
 
 =========================
 COMPORTEMENT ATTENDU
 =========================
 
-- Si l’utilisateur salue (bonjour, salut, merci) :
+- Si l'utilisateur salue (bonjour, salut, merci) :
   → répondre naturellement et brièvement
   → ne pas forcer une analyse business
 
@@ -43,7 +39,7 @@ STYLE
 
 - Ton naturel, fluide et humain
 - Pas de phrases robotiques type chatbot
-- Pas d’introduction inutile
+- Pas d'introduction inutile
 - Pas de répétition de rôle ("je suis un assistant...")
 - Adapter le niveau de détail au contexte
 
@@ -54,62 +50,94 @@ OBJECTIF
 Aider efficacement un dirigeant sans être rigide, ni trop formel, ni trop générique.
 """
 
-# ROUTES
 
 @app.route("/")
 def home():
     return render_template("index.html")
 
 
-@app.route("/chat", methods=["POST"])
-def chat():
+@app.route("/api/rag/status", methods=["GET"])
+def rag_status_route():
+    return jsonify(rag_status())
 
-    data = request.get_json()
-    message = data.get("message", "")
 
-    payload = {
-        "model": "meta-llama/Llama-3.1-8B-Instruct",
-        "messages": [
-            {
-                "role": "system",
-                "content": SYSTEM_PROMPT
-            },
-            {
-                "role": "user",
-                "content": message
-            }
-        ],
-        "temperature": 0.3,
-        "max_tokens": 512
-    }
+@app.route("/upload", methods=["POST"])
+def upload():
+    if "file" not in request.files:
+        return jsonify({"error": "Aucun fichier fourni."}), 400
+
+    file = request.files["file"]
+
+    if not file or not file.filename:
+        return jsonify({"error": "Fichier invalide."}), 400
+
+    filename = secure_filename(file.filename)
+    extension = os.path.splitext(filename)[1].lower()
+
+    if extension not in ALLOWED_EXTENSIONS:
+        return jsonify({
+            "error": "Format non supporté. Utilisez PDF, TXT ou DOCX."
+        }), 400
+
+    file.seek(0, os.SEEK_END)
+    size_mb = file.tell() / (1024 * 1024)
+    file.seek(0)
+
+    if size_mb > MAX_UPLOAD_MB:
+        return jsonify({
+            "error": f"Fichier trop volumineux (max {MAX_UPLOAD_MB} Mo)."
+        }), 400
+
+    filepath = UPLOAD_DIR / filename
+    file.save(filepath)
 
     try:
-        response = requests.post(
-            HF_API_URL,
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-
-        print("STATUS:", response.status_code)
-        print("TEXT:", response.text)
-
-        if response.status_code != 200:
-            return jsonify({
-                "response": f"HF error HTTP {response.status_code}: {response.text}"
-            }), 500
-
-        result = response.json()
-
-        reply = result["choices"][0]["message"]["content"]
-
+        result = ingest_file(str(filepath), filename)
         return jsonify({
-            "response": reply
+            "success": True,
+            "filename": filename,
+            "chunks_indexed": result["chunks"],
+            "characters": result["characters"],
+            "message": (
+                f"Document '{filename}' indexé avec succès "
+                f"({result['chunks']} fragments vectorisés)."
+            ),
         })
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
 
-    except Exception as e:
+
+@app.route("/chat", methods=["POST"])
+def chat():
+    data = request.get_json() or {}
+    message = (data.get("message") or "").strip()
+
+    if not message:
+        return jsonify({"response": "Veuillez saisir une question."}), 400
+
+    context, sources = build_rag_context(message, top_k=TOP_K)
+    system_prompt = build_system_prompt(SYSTEM_PROMPT, context)
+    rag_used = bool(context)
+
+    try:
+        reply = chat_completion(system_prompt, message)
+
+        response_payload = {
+            "response": reply,
+            "rag_used": rag_used,
+            "sources": sources,
+        }
+
+        if rag_used:
+            response_payload["context_chunks"] = len(sources)
+
+        return jsonify(response_payload)
+
+    except Exception as error:
         return jsonify({
-            "response": f"Erreur serveur: {str(e)}"
+            "response": f"Erreur serveur: {str(error)}",
+            "rag_used": rag_used,
+            "sources": sources,
         }), 500
 
 
