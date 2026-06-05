@@ -5,7 +5,8 @@ BASE_DIR = Path(__file__).resolve().parent
 
 # Hugging Face
 HF_API_URL = os.getenv("HF_API_URL", "https://router.huggingface.co/v1/chat/completions")
-HF_CHAT_MODEL = os.getenv("HF_CHAT_MODEL", "meta-llama/Llama-3.1-8B-Instruct")
+# Fallback Qwen (pas de gated access). Llama : meta-llama/Llama-3.1-8B-Instruct
+HF_CHAT_MODEL = os.getenv("HF_CHAT_MODEL", "Qwen/Qwen2.5-7B-Instruct")
 HF_TOKEN = os.getenv("HF_TOKEN")
 
 # RAG
