@@ -5,21 +5,25 @@
 <div class="app-layout">
 
     <!-- SIDEBAR -->
+
     <aside class="sidebar">
 
         <button id="new-chat-btn">
             + Nouveau chat
         </button>
 
-        <div id="conversation-list">
+        <input
+            id="search-chat"
+            type="text"
+            placeholder="🔍 Rechercher..."
+        >
 
-            <!-- conversations injectées en JS -->
-
-        </div>
+        <div id="conversation-list"></div>
 
     </aside>
 
     <!-- CHAT -->
+
     <section id="chat-box">
 
         <div class="chat-wrapper">
@@ -28,12 +32,19 @@
 
             <div id="input-area">
 
-                <button id="upload-btn">📎</button>
+                <button id="upload-btn">
+                    📎
+                </button>
 
-                <!-- preview fichier -->
-                <div id="file-preview" style="display: none;">
+                <div
+                    id="file-preview"
+                    style="display:none;"
+                >
                     <span id="file-name"></span>
-                    <button id="remove-file">✖</button>
+
+                    <button id="remove-file">
+                        ✖
+                    </button>
                 </div>
 
                 <textarea
