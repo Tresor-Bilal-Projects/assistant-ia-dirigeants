@@ -355,7 +355,8 @@ Travaux réalisés récemment :
 
 ```bash
 git clone https://github.com/Tresor-Bilal-Projects/assistant-ia-dirigeants.git
-
+```
+```bash
 cd assistant-ia-dirigeants
 ```
 
