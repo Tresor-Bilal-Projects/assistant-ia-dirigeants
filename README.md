@@ -424,3 +424,4 @@ python app.py
 Le projet est aujourd'hui un MVP conversationnel fonctionnel intégrant un modèle d'intelligence artificielle, une interface moderne de type SaaS et un système complet de gestion des conversations.
 
 Les prochaines évolutions visent principalement l'intégration d'une architecture RAG, l'exploitation de documents internes et l'amélioration continue de l'expérience utilisateur afin de proposer un assistant IA adapté aux besoins des dirigeants d'entreprise.
+
