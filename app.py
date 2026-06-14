@@ -1,14 +1,27 @@
 import os
 import requests
-from flask import Flask, render_template, request, jsonify
+
+from flask import (
+    Flask,
+    render_template,
+    request,
+    jsonify
+)
+
 from dotenv import load_dotenv
 
-# LOAD ENV
+from modules.llm.system_prompt import SYSTEM_PROMPT
+
+# =========================
+# CONFIGURATION
+# =========================
+
 load_dotenv()
 
 app = Flask(__name__)
 
 HF_API_URL = "https://router.huggingface.co/v1/chat/completions"
+
 HF_TOKEN = os.getenv("HF_TOKEN")
 
 headers = {
@@ -16,74 +29,55 @@ headers = {
     "Content-Type": "application/json"
 }
 
-# SYSTEM PROMPT
-
-SYSTEM_PROMPT = """
-Tu es un assistant IA avancé destiné à des dirigeants et professionnels.
-
-Ton rôle est d’aider à la réflexion, à la prise de décision et à l’analyse stratégique, mais avec un ton naturel et humain.
-
-=========================
-COMPORTEMENT ATTENDU
-=========================
-
-- Si l’utilisateur salue (bonjour, salut, merci) :
-  → répondre naturellement et brièvement
-  → ne pas forcer une analyse business
-
-- Si la demande est vague :
-  → poser une question claire et simple
-
-- Si la demande est stratégique :
-  → répondre de manière structurée et orientée décision
-
-=========================
-STYLE
-=========================
-
-- Ton naturel, fluide et humain
-- Pas de phrases robotiques type chatbot
-- Pas d’introduction inutile
-- Pas de répétition de rôle ("je suis un assistant...")
-- Adapter le niveau de détail au contexte
-
-=========================
-OBJECTIF
-=========================
-
-Aider efficacement un dirigeant sans être rigide, ni trop formel, ni trop générique.
-"""
-
-# ROUTES
+# =========================
+# ROUTES FRONTEND
+# =========================
 
 @app.route("/")
 def home():
     return render_template("index.html")
 
+# =========================
+# ROUTE CHAT
+# =========================
 
 @app.route("/chat", methods=["POST"])
 def chat():
 
-    data = request.get_json()
-    message = data.get("message", "")
-
-    payload = {
-        "model": "meta-llama/Llama-3.1-8B-Instruct",
-        "messages": [
-            {
-                "role": "system",
-                "content": SYSTEM_PROMPT
-            },
-            {
-                "role": "user",
-                "content": message
-            }
-        ],
-        "temperature": 0.3,
-        "max_tokens": 512
-    }
+    print(">>> /chat appelé")
 
     try:
+        data = request.get_json()
+
+        if not data:
+            return jsonify({"response": "Requête invalide"}), 400
+
+        message = data.get("message", "").strip()
+
+        if not message:
+            return jsonify({"response": "Message vide"}), 400
+
+        # =========================
+        # PAYLOAD HF
+        # =========================
+        payload = {
+            "model": "meta-llama/Llama-3.1-8B-Instruct",
+
+            "messages": [
+                {
+                    "role": "system",
+                    "content": SYSTEM_PROMPT
+                },
+                {
+                    "role": "user",
+                    "content": message
+                }
+            ],
+
+            "temperature": 0.2,
+            "max_tokens": 512
+        }
+
         response = requests.post(
             HF_API_URL,
             headers=headers,
@@ -91,15 +85,34 @@ def chat():
             timeout=30
         )
 
-        print("STATUS:", response.status_code)
-        print("TEXT:", response.text)
-
-        if response.status_code != 200:
+        # =========================
+        # DEBUG HF RESPONSE
+        # =========================
+        try:
+            result = response.json()
+        except Exception:
             return jsonify({
-                "response": f"HF error HTTP {response.status_code}: {response.text}"
+                "response": "Erreur: réponse non JSON de Hugging Face"
             }), 500
 
-        result = response.json()
+        print("HF STATUS:", response.status_code)
+        print("HF RESPONSE:", result)
+
+        # =========================
+        # ERREUR HF
+        # =========================
+        if response.status_code != 200:
+            return jsonify({
+                "response": f"Erreur HF ({response.status_code}) : {result}"
+            }), 500
+
+        # =========================
+        # VALIDATION FORMAT
+        # =========================
+        if "choices" not in result:
+            return jsonify({
+                "response": f"Format HF inattendu : {result}"
+            }), 500
 
         reply = result["choices"][0]["message"]["content"]
 
@@ -112,6 +125,10 @@ def chat():
             "response": f"Erreur serveur: {str(e)}"
         }), 500
 
+
+# =========================
+# RUN APP
+# =========================
 
 if __name__ == "__main__":
     app.run(debug=True)
