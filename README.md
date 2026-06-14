@@ -425,3 +425,4 @@ Le projet est aujourd'hui un MVP conversationnel fonctionnel intégrant un modè
 
 Les prochaines évolutions visent principalement l'intégration d'une architecture RAG, l'exploitation de documents internes et l'amélioration continue de l'expérience utilisateur afin de proposer un assistant IA adapté aux besoins des dirigeants d'entreprise.
 
+
