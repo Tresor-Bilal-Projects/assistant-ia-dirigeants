@@ -6,9 +6,9 @@
 
 Assistant IA pour Dirigeants est une application web conversationnelle destinée à accompagner les dirigeants d'entreprise dans leurs réflexions stratégiques, opérationnelles et décisionnelles.
 
-L'application permet d'interagir en langage naturel avec un modèle d'intelligence artificielle via une interface moderne inspirée des assistants conversationnels de nouvelle génération.
+L'application permet d'interagir en langage naturel avec un modèle d'intelligence artificielle via une interface moderne de type assistant SaaS.
 
-Le projet repose actuellement sur l'intégration d'un modèle de langage via Hugging Face Router API et est conçu pour évoluer vers une architecture RAG (Retrieval-Augmented Generation) permettant l'exploitation de documents internes d'entreprise.
+Le projet repose sur l'intégration d'un modèle de langage via Hugging Face Router API et est conçu pour évoluer vers une architecture RAG (Retrieval-Augmented Generation) permettant l’exploitation de documents internes d’entreprise.
 
 ---
 
@@ -28,27 +28,27 @@ L'objectif du projet est de :
 
 Le projet est actuellement au stade :
 
-> MVP fonctionnel avec gestion complète des conversations et intégration IA opérationnelle.
+> MVP fonctionnel avec interface conversationnelle et intégration IA opérationnelle.
 
 ---
 
 ## ✔ Backend
 
-Le backend est fonctionnel et assure :
+Le backend assure :
 
+* Création et gestion des routes API Flask
+* Intégration avec l’API Hugging Face Router
 * Gestion des requêtes utilisateur
-* Communication avec le modèle IA
-* Génération des réponses
+* Génération de réponses IA contextualisées
 * Gestion des erreurs serveur
-* Architecture Flask modulaire
-* Configuration sécurisée via variables d'environnement
-* Préparation de l'intégration RAG
+* Structuration du prompt système
+* Architecture backend modulaire
 
 ---
 
 ## ✔ Frontend
 
-Le frontend dispose actuellement des fonctionnalités suivantes :
+Le frontend dispose des fonctionnalités suivantes :
 
 * Interface conversationnelle type ChatGPT
 * Design SaaS moderne (dark mode)
@@ -58,12 +58,10 @@ Le frontend dispose actuellement des fonctionnalités suivantes :
 * Auto-scroll
 * Auto-resize du textarea
 * Bouton copier sur les réponses IA
-* Gestion complète des conversations
-* Sauvegarde locale des conversations
-* Recherche de conversations
-* Renommage des conversations
-* Suppression des conversations
-* Sidebar conversationnelle
+* Gestion des conversations
+* Sauvegarde locale (localStorage)
+* Recherche, renommage et suppression des conversations
+* Sidebar interactive
 * Architecture JavaScript modulaire
 
 ---
@@ -81,18 +79,11 @@ Le frontend dispose actuellement des fonctionnalités suivantes :
 
 ### Responsabilités
 
-* Gestion des routes API
+* API REST `/chat`
 * Communication avec le modèle IA
 * Traitement des requêtes utilisateur
 * Retour des réponses JSON
 * Gestion des erreurs
-* Préparation de l'intégration documentaire
-
-### Endpoint principal
-
-```plaintext
-POST /chat
-```
 
 ---
 
@@ -109,136 +100,66 @@ POST /chat
 
 * Interface utilisateur
 * Gestion des conversations
-* Affichage dynamique des messages
+* Affichage des messages
 * Communication avec le backend
-* Gestion du stockage local
-* Gestion des interactions utilisateur
+* Persistance locale
 
 ---
 
-# 5. Architecture Frontend
-
-Le frontend est organisé en modules indépendants :
-
-```plaintext
-static/js/
-
-├── chat.js
-├── api.js
-├── ui.js
-├── upload.js
-├── conversationManager.js
-├── storage.js
-```
-
-### chat.js
-
-Gestion principale du chat :
-
-* envoi des messages
-* réception des réponses
-* gestion des événements utilisateur
-
-### api.js
-
-Communication avec le backend :
-
-* appels API
-* upload de fichiers
-* gestion des réponses serveur
-
-### ui.js
-
-Gestion de l'interface :
-
-* affichage des messages
-* rendu Markdown
-* animations
-* typing effect
-
-### upload.js
-
-Gestion des fichiers :
-
-* sélection
-* prévisualisation
-* suppression
-
-### storage.js
-
-Persistance locale :
-
-* création des conversations
-* sauvegarde dans localStorage
-* récupération des conversations
-
-### conversationManager.js
-
-Gestion de la sidebar :
-
-* création de conversations
-* recherche
-* renommage
-* suppression
-* navigation entre conversations
-
----
-
-# 6. Modèle IA utilisé
+# 5. Modèle IA utilisé
 
 ### Fournisseur
 
 Hugging Face Router API
 
-### Modèle actuel
+### Modèle
 
-```plaintext
+```plaintext id="model_fix"
 meta-llama/Llama-3.1-8B-Instruct
 ```
 
-Le modèle est utilisé pour générer des réponses conversationnelles adaptées à un contexte professionnel.
+Le modèle génère des réponses adaptées à un contexte professionnel et décisionnel.
+
+---
+
+# 6. Fonctionnement global
+
+1. L’utilisateur envoie un message via l’interface
+2. Flask reçoit la requête `/chat`
+3. Le backend transmet la requête au modèle IA via Hugging Face
+4. Le modèle génère une réponse structurée
+5. La réponse est renvoyée et affichée dans l’interface
 
 ---
 
 # 7. Gestion des conversations
 
-Le système de gestion des conversations permet :
-
-* Création automatique d'un nouveau chat
+* Création automatique de conversations
 * Sauvegarde locale via localStorage
-* Conservation de l'historique après rechargement
-* Recherche de conversations
-* Renommage des conversations
-* Suppression des conversations
-* Navigation entre plusieurs conversations
+* Historique persistant
+* Renommage et suppression
+* Navigation multi-conversations
 
 ---
 
 # 8. Sécurité
 
-Le projet applique actuellement les mesures suivantes :
-
-* Utilisation de variables d'environnement
-* Clés API non exposées
-* Fichier `.env` ignoré par Git
-* Fichier `.env.example` fourni
+* Variables d’environnement pour les clés API
+* Aucune clé exposée dans le code source
 * Séparation frontend / backend
+* Fichier `.env` ignoré
 
 ---
 
 # 9. Structure du projet
 
-```plaintext
+```plaintext id="structure_final"
 assistant-ia-dirigeants/
 
 ├── app.py
 ├── config.py
 ├── requirements.txt
 ├── .env.example
-├── .gitignore
-
-├── data/
-├── vectorstore/
 
 ├── modules/
 │   ├── llm/
@@ -246,22 +167,11 @@ assistant-ia-dirigeants/
 │   └── utils/
 
 ├── templates/
-│   ├── base.html
 │   └── index.html
 
 ├── static/
 │   ├── css/
-│   │   └── chat.css
-│   │
 │   └── js/
-│       ├── api.js
-│       ├── chat.js
-│       ├── ui.js
-│       ├── upload.js
-│       ├── storage.js
-│       └── conversationManager.js
-
-├── tests/
 
 └── README.md
 ```
@@ -277,130 +187,61 @@ assistant-ia-dirigeants/
 * Génération de réponses contextuelles
 * Gestion des erreurs
 * Architecture modulaire
-* Préparation de l'intégration RAG
-
----
 
 ## Frontend
 
-* Interface type ChatGPT
+* Interface type assistant SaaS
 * Affichage dynamique des messages
 * Support Markdown
-* Typing effect
-* Auto-scroll
-* Auto-resize du textarea
-* Bouton copier
 * Gestion multi-conversations
-* Recherche de conversations
-* Renommage
-* Suppression
 * Sauvegarde locale automatique
-* Sidebar interactive
+* UX interactive moderne
 
 ---
 
-# 11. Améliorations récentes
-
-Travaux réalisés récemment :
-
-* Refonte complète de l'interface utilisateur
-* Modernisation du design SaaS
-* Stabilisation du rendu des messages
-* Amélioration du support Markdown
-* Optimisation du typing effect
-* Amélioration du textarea auto-resize
-* Ajout du bouton copier
-* Mise en place du système de conversations
-* Création de la sidebar conversationnelle
-* Ajout de la recherche de conversations
-* Ajout du renommage des conversations
-* Ajout de la suppression des conversations
-* Intégration du localStorage
-* Modularisation avancée du frontend
-
----
-
-# 12. Prochaines étapes
+# 11. Prochaines étapes
 
 ## Backend
 
 * Amélioration du prompt système
 * Mémoire conversationnelle serveur
 * Endpoint `/upload`
-* Extraction PDF
-* Extraction TXT
 * Indexation documentaire
-* Vectorisation des documents
 * Intégration RAG
-* Gestion avancée du contexte utilisateur
-
----
 
 ## Frontend
 
-* Amélioration responsive mobile
-* Prévisualisation avancée des fichiers
+* Responsive mobile
 * Notifications utilisateur
-* Optimisation des performances
-* Amélioration des animations UI
-* Paramètres utilisateur
-* Personnalisation de l'interface
-* Intégration de la future couche RAG
+* Optimisation UX/UI
+* Intégration RAG interface
 
 ---
 
-# 13. Installation et lancement
+# 12. Installation et lancement
 
 ## 1. Cloner le projet
 
 ```bash
 git clone https://github.com/Tresor-Bilal-Projects/assistant-ia-dirigeants.git
-```
-```bash
 cd assistant-ia-dirigeants
 ```
 
----
-
-## 2. Créer un environnement virtuel
-
-```bash
-python -m venv venv
-```
-
-### Linux / macOS
-
-```bash
-source venv/bin/activate
-```
-
-### Windows
-
-```bash
-venv\Scripts\activate
-```
-
----
-
-## 3. Installer les dépendances
+## 2. Installer les dépendances
 
 ```bash
 pip install -r requirements.txt
 ```
 
----
-
-## 4. Configurer l'environnement
+## 3. Configurer l’environnement
 
 ```bash
 cp .env.example .env
 ```
 
-Ajouter ensuite votre clé API dans le fichier `.env`.
+Ajouter la clé API Hugging Face dans `.env`
 
----
-
-## 5. Lancer l'application
+## 4. Lancer l’application
 
 ```bash
 python app.py
@@ -408,21 +249,21 @@ python app.py
 
 ---
 
-# 14. Répartition du travail
+# 13. Équipe et répartition des tâches
 
-| Membre        | Rôle principal                                                                                                             |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Nathan        | Backend, API Flask, intégration IA, logique métier, architecture serveur, préparation RAG                                  |
-| Trésor        | Frontend, UX/UI, architecture JavaScript, gestion des conversations, persistance locale, intégration interface utilisateur |
-| Pierre-Thyrel | Tests, validation fonctionnelle, support technique                                                                         |
-| Lina          | Documentation, organisation projet, suivi des livrables                                                                    |
+Le projet a été réalisé dans un cadre académique collaboratif.
+
+| Membre        | Rôle principal                                                                                                               |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Nathan        | Backend, API Flask, intégration IA, logique métier, architecture serveur, préparation RAG                                    |
+| Trésor        | Backend (API Flask), intégration IA, Frontend, UX/UI, architecture JavaScript, gestion des conversations, persistance locale |
+| Pierre-Thyrel | Tests, validation fonctionnelle, support technique                                                                           |
+| Lina          | Documentation, organisation projet, suivi des livrables                                                                      |
 
 ---
 
-# 15. Conclusion
+# 14. Conclusion
 
-Le projet est aujourd'hui un MVP conversationnel fonctionnel intégrant un modèle d'intelligence artificielle, une interface moderne de type SaaS et un système complet de gestion des conversations.
+Le projet constitue un MVP fonctionnel d’assistant IA destiné aux dirigeants, combinant une interface moderne et un modèle de langage capable d’analyse et de recommandation.
 
-Les prochaines évolutions visent principalement l'intégration d'une architecture RAG, l'exploitation de documents internes et l'amélioration continue de l'expérience utilisateur afin de proposer un assistant IA adapté aux besoins des dirigeants d'entreprise.
-
-
+Il représente une base solide pour évoluer vers une architecture avancée de type RAG et une solution SaaS complète orientée entreprise.
