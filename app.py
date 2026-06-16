@@ -1,134 +1,112 @@
 import os
-import requests
-
-from flask import (
-    Flask,
-    render_template,
-    request,
-    jsonify
-)
 
 from dotenv import load_dotenv
 
-from modules.llm.system_prompt import SYSTEM_PROMPT
-
-# =========================
-# CONFIGURATION
-# =========================
-
 load_dotenv()
+
+from flask import Flask, jsonify, render_template, request
+from werkzeug.utils import secure_filename
+
+from config import ALLOWED_EXTENSIONS, MAX_UPLOAD_MB, TOP_K, UPLOAD_DIR
+from modules.llm.hf_client import chat_completion
+from modules.llm.system_prompt import SYSTEM_PROMPT
+from modules.services.ingestion import ingest_file
+from modules.services.rag import build_rag_context, build_system_prompt, rag_status
 
 app = Flask(__name__)
 
-HF_API_URL = "https://router.huggingface.co/v1/chat/completions"
-
-HF_TOKEN = os.getenv("HF_TOKEN")
-
-headers = {
-    "Authorization": f"Bearer {HF_TOKEN}",
-    "Content-Type": "application/json"
-}
-
-# =========================
-# ROUTES FRONTEND
-# =========================
 
 @app.route("/")
 def home():
     return render_template("index.html")
 
-# =========================
-# ROUTE CHAT
-# =========================
+
+@app.route("/api/rag/status", methods=["GET"])
+def rag_status_route():
+    return jsonify(rag_status())
+
+
+@app.route("/upload", methods=["POST"])
+def upload():
+    if "file" not in request.files:
+        return jsonify({"error": "Aucun fichier fourni."}), 400
+
+    file = request.files["file"]
+
+    if not file or not file.filename:
+        return jsonify({"error": "Fichier invalide."}), 400
+
+    filename = secure_filename(file.filename)
+    extension = os.path.splitext(filename)[1].lower()
+
+    if extension not in ALLOWED_EXTENSIONS:
+        return jsonify({
+            "error": "Format non supporté. Utilisez PDF, TXT ou DOCX."
+        }), 400
+
+    file.seek(0, os.SEEK_END)
+    size_mb = file.tell() / (1024 * 1024)
+    file.seek(0)
+
+    if size_mb > MAX_UPLOAD_MB:
+        return jsonify({
+            "error": f"Fichier trop volumineux (max {MAX_UPLOAD_MB} Mo)."
+        }), 400
+
+    filepath = UPLOAD_DIR / filename
+    file.save(filepath)
+
+    try:
+        result = ingest_file(str(filepath), filename)
+
+        return jsonify({
+            "success": True,
+            "filename": filename,
+            "chunks_indexed": result["chunks"],
+            "characters": result["characters"],
+            "message": (
+                f"Document '{filename}' indexé avec succès "
+                f"({result['chunks']} fragments vectorisés)."
+            ),
+        })
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
 
 @app.route("/chat", methods=["POST"])
 def chat():
+    data = request.get_json() or {}
+    message = (data.get("message") or "").strip()
 
-    print(">>> /chat appelé")
+    if not message:
+        return jsonify({"response": "Veuillez saisir une question."}), 400
+
+    context, sources = build_rag_context(message, top_k=TOP_K)
+    system_prompt = build_system_prompt(SYSTEM_PROMPT, context)
+    rag_used = bool(context)
 
     try:
-        data = request.get_json()
+        reply = chat_completion(system_prompt, message)
 
-        if not data:
-            return jsonify({"response": "Requête invalide"}), 400
-
-        message = data.get("message", "").strip()
-
-        if not message:
-            return jsonify({"response": "Message vide"}), 400
-
-        # =========================
-        # PAYLOAD HF
-        # =========================
-        payload = {
-            "model": "meta-llama/Llama-3.1-8B-Instruct",
-
-            "messages": [
-                {
-                    "role": "system",
-                    "content": SYSTEM_PROMPT
-                },
-                {
-                    "role": "user",
-                    "content": message
-                }
-            ],
-
-            "temperature": 0.2,
-            "max_tokens": 512
+        response_payload = {
+            "response": reply,
+            "rag_used": rag_used,
+            "sources": sources,
         }
 
-        response = requests.post(
-            HF_API_URL,
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
+        if rag_used:
+            response_payload["context_chunks"] = len(sources)
 
-        # =========================
-        # DEBUG HF RESPONSE
-        # =========================
-        try:
-            result = response.json()
-        except Exception:
-            return jsonify({
-                "response": "Erreur: réponse non JSON de Hugging Face"
-            }), 500
+        return jsonify(response_payload)
 
-        print("HF STATUS:", response.status_code)
-        print("HF RESPONSE:", result)
-
-        # =========================
-        # ERREUR HF
-        # =========================
-        if response.status_code != 200:
-            return jsonify({
-                "response": f"Erreur HF ({response.status_code}) : {result}"
-            }), 500
-
-        # =========================
-        # VALIDATION FORMAT
-        # =========================
-        if "choices" not in result:
-            return jsonify({
-                "response": f"Format HF inattendu : {result}"
-            }), 500
-
-        reply = result["choices"][0]["message"]["content"]
-
+    except Exception as error:
         return jsonify({
-            "response": reply
-        })
-
-    except Exception as e:
-        return jsonify({
-            "response": f"Erreur serveur: {str(e)}"
+            "response": f"Erreur serveur: {str(error)}",
+            "rag_used": rag_used,
+            "sources": sources,
         }), 500
 
-
-# =========================
-# RUN APP
-# =========================
 
 if __name__ == "__main__":
     app.run(debug=True)

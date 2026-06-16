@@ -1,2 +1,7 @@
 .env
-modules/llm/__pycache__/
+venv/
+.venv/
+vectorstore/chroma/
+data/uploads/
+__pycache__/
+*.pyc
