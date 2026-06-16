@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <h2 class="auth-title">Créer un compte</h2>
+        <p class="auth-subtitle">Quelques secondes suffisent</p>
+
+        <form method="post" action="{{ url_for('auth.register') }}" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="auth-field">
+                {{ form.name.label }}
+                {{ form.name(class="auth-input", placeholder="Votre nom", autocomplete="name") }}
+                {% for error in form.name.errors %}
+                <span class="field-error">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="auth-field">
+                {{ form.email.label }}
+                {{ form.email(class="auth-input", placeholder="vous@entreprise.com", autocomplete="email") }}
+                {% for error in form.email.errors %}
+                <span class="field-error">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="auth-field">
+                {{ form.password.label }}
+                {{ form.password(class="auth-input", placeholder="Au moins 8 caractères", autocomplete="new-password") }}
+                {% for error in form.password.errors %}
+                <span class="field-error">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="auth-field">
+                {{ form.confirm.label }}
+                {{ form.confirm(class="auth-input", placeholder="Répétez le mot de passe", autocomplete="new-password") }}
+                {% for error in form.confirm.errors %}
+                <span class="field-error">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            {{ form.submit(class="auth-submit") }}
+        </form>
+
+        <p class="auth-switch">
+            Déjà inscrit ?
+            <a href="{{ url_for('auth.login') }}">Se connecter</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

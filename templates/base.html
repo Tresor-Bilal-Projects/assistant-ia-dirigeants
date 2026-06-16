@@ -3,24 +3,40 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Assistant IA Dirigeants</title>
     <link rel="stylesheet" href="/static/css/chat.css">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script type="module" src="/static/js/chat.js" defer></script>
-    <script type="module" src="/static/js/upload.js" defer></script>
-
+    {% block head %}{% endblock %}
 </head>
 <body>
 
 
 <header>
     <h1>Assistant IA</h1>
+
+    {% if current_user.is_authenticated %}
+    <div class="user-menu">
+        <span class="user-name">{{ current_user.name }}</span>
+        <a class="logout-btn" href="{{ url_for('auth.logout') }}">Déconnexion</a>
+    </div>
+    {% endif %}
 </header>
 
 <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-container">
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
     {% block content %}{% endblock %}
 </main>
 
 
+{% block scripts %}{% endblock %}
 </body>
 </html>
