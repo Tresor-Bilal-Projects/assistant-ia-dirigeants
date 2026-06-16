@@ -21,7 +21,6 @@ export function addMessage(text, type, messages) {
     wrapper.appendChild(content);
 
     /* COPY BUTTON GLOBAL (BOT ONLY) */
-
     if (type === "bot") {
 
         const actions = document.createElement("div");
@@ -65,7 +64,6 @@ export function addMessage(text, type, messages) {
 }
 
 /* LOADING STATE */
-
 export function setLoadingState(input, button, uploadBtn, state) {
 
     input.disabled = state;
@@ -77,13 +75,11 @@ export function setLoadingState(input, button, uploadBtn, state) {
 }
 
 /* SCROLL */
-
 export function scrollToBottom(messages) {
     messages.scrollTop = messages.scrollHeight;
 }
 
 /* TYPING INDICATOR */
-
 export function createTypingIndicator(messages) {
 
     const el = document.createElement("div");
@@ -98,7 +94,6 @@ export function createTypingIndicator(messages) {
 }
 
 /* TYPE EFFECT (FIXED + SAFE)*/
-
 export function typeEffect(contentElement, text, input, button, uploadBtn) {
 
     let i = 0;
@@ -136,7 +131,6 @@ export function typeEffect(contentElement, text, input, button, uploadBtn) {
 }
 
 /* CODE BLOCK ENHANCER (CHATGPT STYLE) */
-
 function enhanceCodeBlocks(container) {
 
     const blocks = container.querySelectorAll("pre");
@@ -177,7 +171,6 @@ function enhanceCodeBlocks(container) {
 }
 
 /* CLEAN TEXT FOR GLOBAL COPY */
-
 function extractCleanText(content) {
 
     const clone = content.cloneNode(true);

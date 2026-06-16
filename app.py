@@ -9,46 +9,11 @@ from werkzeug.utils import secure_filename
 
 from config import ALLOWED_EXTENSIONS, MAX_UPLOAD_MB, TOP_K, UPLOAD_DIR
 from modules.llm.hf_client import chat_completion
+from modules.llm.system_prompt import SYSTEM_PROMPT
 from modules.services.ingestion import ingest_file
 from modules.services.rag import build_rag_context, build_system_prompt, rag_status
 
 app = Flask(__name__)
-
-SYSTEM_PROMPT = """
-Tu es un assistant IA avancé destiné à des dirigeants et professionnels.
-
-Ton rôle est d'aider à la réflexion, à la prise de décision et à l'analyse stratégique, mais avec un ton naturel et humain.
-
-=========================
-COMPORTEMENT ATTENDU
-=========================
-
-- Si l'utilisateur salue (bonjour, salut, merci) :
-  → répondre naturellement et brièvement
-  → ne pas forcer une analyse business
-
-- Si la demande est vague :
-  → poser une question claire et simple
-
-- Si la demande est stratégique :
-  → répondre de manière structurée et orientée décision
-
-=========================
-STYLE
-=========================
-
-- Ton naturel, fluide et humain
-- Pas de phrases robotiques type chatbot
-- Pas d'introduction inutile
-- Pas de répétition de rôle ("je suis un assistant...")
-- Adapter le niveau de détail au contexte
-
-=========================
-OBJECTIF
-=========================
-
-Aider efficacement un dirigeant sans être rigide, ni trop formel, ni trop générique.
-"""
 
 
 @app.route("/")
@@ -93,6 +58,7 @@ def upload():
 
     try:
         result = ingest_file(str(filepath), filename)
+
         return jsonify({
             "success": True,
             "filename": filename,
@@ -103,6 +69,7 @@ def upload():
                 f"({result['chunks']} fragments vectorisés)."
             ),
         })
+
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 

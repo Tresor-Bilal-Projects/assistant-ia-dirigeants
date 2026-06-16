@@ -34,7 +34,13 @@ def add_document_chunks(filename: str, chunks: list[str]) -> None:
     )
 
 
-def search(query: str, top_k: int = 4) -> list[dict]:
+def search(query: str, top_k: int = 4, max_distance: float | None = None) -> list[dict]:
+    """Return the closest chunks for ``query``.
+
+    When ``max_distance`` is provided, chunks whose distance is strictly above
+    it are discarded so that only genuinely relevant passages are returned
+    (Chroma's default space is squared-L2 distance: lower = more similar).
+    """
     collection = get_collection()
     total = collection.count()
 
@@ -52,6 +58,8 @@ def search(query: str, top_k: int = 4) -> list[dict]:
 
     hits = []
     for content, metadata, distance in zip(documents, metadatas, distances):
+        if max_distance is not None and distance is not None and distance > max_distance:
+            continue
         hits.append({
             "content": content,
             "source": metadata.get("source", "inconnu"),

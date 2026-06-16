@@ -1,5 +1,6 @@
 .env
 venv/
+.venv/
 vectorstore/chroma/
 data/uploads/
 __pycache__/

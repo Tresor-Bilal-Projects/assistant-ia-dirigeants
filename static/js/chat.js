@@ -1,163 +1,212 @@
 import { sendMessageAPI, uploadFileAPI } from "./api.js";
 
 import {
-    addMessage,
-    setLoadingState,
-    typeEffect
+addMessage,
+setLoadingState,
+typeEffect
 } from "./ui.js";
 
-import { resetSelectedFile, selectedFile } from "./upload.js";
+import {
+resetSelectedFile,
+selectedFile
+} from "./upload.js";
+
+import {
+initConversationManager,
+addMessageToConversation
+} from "./conversationManager.js";
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    const input = document.getElementById("user-input");
-    const button = document.getElementById("send-btn");
-    const uploadBtn = document.getElementById("upload-btn");
-    const messages = document.getElementById("messages");
+const input = document.getElementById("user-input");
+const button = document.getElementById("send-btn");
+const uploadBtn = document.getElementById("upload-btn");
+const messages = document.getElementById("messages");
 
-    const MIN_HEIGHT = 46;
-    const MAX_HEIGHT = 120;
+const MIN_HEIGHT = 46;
+const MAX_HEIGHT = 120;
 
-    /* TEXTAREA AUTO RESIZE */
+let manager = null;
 
-    function autoResize() {
+function renderConversation(conversation) {
+    messages.innerHTML = "";
 
-        input.style.height = MIN_HEIGHT + "px";
+    if (!conversation) return;
 
-        const newHeight = Math.min(
-            input.scrollHeight,
-            MAX_HEIGHT
+    conversation.messages.forEach((msg) => {
+        addMessage(
+            msg.content,
+            msg.role === "user" ? "user" : "bot",
+            messages
         );
+    });
 
-        input.style.height = newHeight + "px";
+    messages.scrollTop = messages.scrollHeight;
+}
 
-        input.style.overflowY =
-            input.scrollHeight > MAX_HEIGHT
-                ? "auto"
-                : "hidden";
+manager = initConversationManager(renderConversation);
+
+function autoResize() {
+    input.style.height = MIN_HEIGHT + "px";
+
+    const newHeight = Math.min(
+        input.scrollHeight,
+        MAX_HEIGHT
+    );
+
+    input.style.height = newHeight + "px";
+
+    input.style.overflowY =
+        input.scrollHeight > MAX_HEIGHT
+            ? "auto"
+            : "hidden";
+}
+
+input.addEventListener("input", autoResize);
+autoResize();
+
+async function sendMessage() {
+    const text = input.value.trim();
+
+    if (!text && !selectedFile) {
+        return;
     }
 
-    input.addEventListener("input", autoResize);
+    if (text) {
+        addMessage(text, "user", messages);
 
-    /* init height */
-
-    autoResize();
-
-    /* SEND MESSAGE */
-
-    async function sendMessage() {
-
-        const text = input.value.trim();
-
-        if (!text && !selectedFile) return;
-
-        /* USER MESSAGE */
-
-        if (text) {
-            addMessage(text, "user", messages);
-        }
-
-        /* RESET INPUT */
-
-        input.value = "";
-
-        input.style.height = MIN_HEIGHT + "px";
-
-        autoResize();
-
-        /* BOT PLACEHOLDER */
-
-        const loading = addMessage("", "bot", messages);
-
-        setLoadingState(
-            input,
-            button,
-            uploadBtn,
-            true
+        addMessageToConversation(
+            "user",
+            text
         );
 
-        try {
+        manager.refreshSidebar();
+    }
 
-            let fileData = null;
+    input.value = "";
+    input.style.height = MIN_HEIGHT + "px";
+    autoResize();
 
-            /* FILE UPLOAD */
+    const loading = addMessage(
+        "",
+        "bot",
+        messages
+    );
 
-            if (selectedFile) {
-                fileData = await uploadFileAPI(selectedFile);
+    setLoadingState(
+        input,
+        button,
+        uploadBtn,
+        true
+    );
 
-                if (fileData?.error) {
-                    throw new Error(fileData.error);
-                }
+    try {
+        let fileData = null;
 
-                resetSelectedFile();
+        if (selectedFile) {
+            fileData = await uploadFileAPI(selectedFile);
+
+            if (fileData?.error) {
+                throw new Error(fileData.error);
             }
 
-            /* API CALL */
+            resetSelectedFile();
+        }
 
+        let botText = "";
+
+        if (!text && fileData?.message) {
+            botText = `📎 ${fileData.message}`;
+        } else {
             const response = await sendMessageAPI(
                 text,
                 fileData
             );
 
-            /* SAFE RESPONSE */
-
-            let safeResponse =
+            const safeResponse =
                 response?.answer ||
                 response?.response ||
                 response?.message ||
                 response?.result ||
                 "Erreur : réponse vide";
 
-            if (response?.rag_used && response?.sources?.length) {
-                safeResponse += `\n\n---\n**Sources RAG :** ${response.sources.join(", ")}`;
+            botText = String(safeResponse);
+
+            if (
+                response?.rag_used &&
+                response?.sources?.length
+            ) {
+                botText +=
+                    `\n\n---\n**Sources RAG :** ` +
+                    response.sources.join(", ");
             }
 
             if (fileData?.message) {
-                safeResponse = `📎 ${fileData.message}\n\n${safeResponse}`;
+                botText =
+                    `📎 ${fileData.message}\n\n${botText}`;
             }
-
-            /* TYPE EFFECT */
-
-            typeEffect(
-                loading.content,
-                String(safeResponse),
-                input,
-                button,
-                uploadBtn
-            );
-
-        } catch (err) {
-
-            console.error(err);
-
-            loading.content.innerHTML = `
-                <p style="color:red;">
-                    Une erreur est survenue.
-                </p>
-            `;
-
-            setLoadingState(
-                input,
-                button,
-                uploadBtn,
-                false
-            );
         }
+
+        addMessageToConversation(
+            "assistant",
+            botText
+        );
+
+        manager.refreshSidebar();
+
+        typeEffect(
+            loading.content,
+            botText,
+            input,
+            button,
+            uploadBtn
+        );
+
+    } catch (err) {
+        console.error(err);
+
+        const errorMessage =
+            err?.message ||
+            "Une erreur est survenue.";
+
+        loading.content.innerHTML = `
+            <p style="color:red;">
+                ${errorMessage}
+            </p>
+        `;
+
+        addMessageToConversation(
+            "assistant",
+            errorMessage
+        );
+
+        manager.refreshSidebar();
+
+        setLoadingState(
+            input,
+            button,
+            uploadBtn,
+            false
+        );
     }
+}
 
-    /* BUTTON CLICK */
+button.addEventListener(
+    "click",
+    sendMessage
+);
 
-    button.addEventListener("click", sendMessage);
-
-    /* ENTER / SHIFT+ENTER */
-
-    input.addEventListener("keydown", (e) => {
-
-        if (e.key === "Enter" && !e.shiftKey) {
-
-            e.preventDefault();
-
+input.addEventListener(
+    "keydown",
+    (event) => {
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
+            event.preventDefault();
             sendMessage();
         }
-    });
+    }
+);
+
 });
