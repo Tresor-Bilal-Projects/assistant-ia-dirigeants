@@ -30,6 +30,15 @@ MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "10"))
 # 1.15 sits in that gap, keeping real questions while rejecting noise.
 RAG_DISTANCE_THRESHOLD = float(os.getenv("RAG_DISTANCE_THRESHOLD", "1.15"))
 
+# Synthesis queries ("liste tous les produits", "résume le document") need
+# more chunks and a relaxed threshold because their embeddings are generic.
+RAG_SYNTHESIS_TOP_K = int(os.getenv("RAG_SYNTHESIS_TOP_K", "20"))
+RAG_SYNTHESIS_DISTANCE = float(os.getenv("RAG_SYNTHESIS_DISTANCE", "1.6"))
+
+# Short follow-up queries ("et les prix ?") also get a relaxed threshold.
+RAG_FOLLOWUP_TOP_K = int(os.getenv("RAG_FOLLOWUP_TOP_K", "8"))
+RAG_FOLLOWUP_DISTANCE = float(os.getenv("RAG_FOLLOWUP_DISTANCE", "1.35"))
+
 ALLOWED_EXTENSIONS = {".pdf", ".txt", ".docx"}
 
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)

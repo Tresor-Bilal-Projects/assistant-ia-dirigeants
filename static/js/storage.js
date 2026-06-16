@@ -1,120 +1,34 @@
-const STORAGE_KEY = "assistant_conversations";
+// Server-backed conversation store. The backend (per-user, in DB) is the single
+// source of truth; localStorage is no longer used for durable history.
+import { apiFetch } from "./api.js";
 
-export function getConversations() {
-
-    try {
-
-        return JSON.parse(
-            localStorage.getItem(
-                STORAGE_KEY
-            )
-        ) || [];
-
-    } catch {
-
-        return [];
-    }
+export async function listConversations() {
+    const res = await apiFetch("/api/conversations");
+    if (!res.ok) return [];
+    return await res.json();
 }
 
-export function saveConversations(
-    conversations
-) {
-
-    localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(
-            conversations
-        )
-    );
+export async function getConversation(id) {
+    const res = await apiFetch(`/api/conversations/${id}`);
+    if (!res.ok) return null;
+    return await res.json();
 }
 
-export function getConversation(
-    id
-) {
-
-    return getConversations().find(
-        conversation =>
-            conversation.id === id
-    );
+export async function createConversation() {
+    const res = await apiFetch("/api/conversations", { method: "POST" });
+    if (!res.ok) return null;
+    return await res.json();
 }
 
-export function createConversation() {
-
-    const conversations =
-        getConversations();
-
-    const existingEmpty =
-        conversations.find(
-            conversation =>
-                !conversation.messages ||
-                conversation.messages
-                    .length === 0
-        );
-
-    if (existingEmpty) {
-        return existingEmpty;
-    }
-
-    const conversation = {
-
-        id: crypto.randomUUID(),
-
-        title: "Nouveau chat",
-
-        createdAt: Date.now(),
-
-        messages: []
-    };
-
-    conversations.unshift(
-        conversation
-    );
-
-    saveConversations(
-        conversations
-    );
-
-    return conversation;
+export async function renameConversation(id, title) {
+    const res = await apiFetch(`/api/conversations/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ title })
+    });
+    return res.ok;
 }
 
-export function updateConversation(
-    id,
-    updater
-) {
-
-    const conversations =
-        getConversations();
-
-    const index =
-        conversations.findIndex(
-            conversation =>
-                conversation.id === id
-        );
-
-    if (index === -1) {
-        return;
-    }
-
-    updater(
-        conversations[index]
-    );
-
-    saveConversations(
-        conversations
-    );
-}
-
-export function deleteConversation(
-    id
-) {
-
-    const conversations =
-        getConversations().filter(
-            conversation =>
-                conversation.id !== id
-        );
-
-    saveConversations(
-        conversations
-    );
+export async function deleteConversation(id) {
+    const res = await apiFetch(`/api/conversations/${id}`, { method: "DELETE" });
+    return res.ok;
 }
