@@ -5,3 +5,9 @@ vectorstore/chroma/
 data/uploads/
 __pycache__/
 *.pyc
+
+# Databases (SQLite) & Flask instance folder
+instance/
+*.db
+*.sqlite
+*.sqlite3
