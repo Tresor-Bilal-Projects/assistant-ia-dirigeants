@@ -104,6 +104,34 @@ def _is_followup_query(query: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Context builder helpers
+# ---------------------------------------------------------------------------
+
+def _expand_and_sort(hits: list, user_id, document_id) -> list:
+    """Sort hits by reading order and pull in the immediately following chunk (N+1).
+
+    Avoids semantic-split errors where a product name lands in chunk N and its
+    price in chunk N+1: without this, N+1 may score above the distance threshold
+    and arrive out of order, causing the LLM to associate the price with the
+    wrong product.  Only active when document_id is known.
+    """
+    if not hits or document_id is None:
+        return hits
+    present = {h["chunk_index"] for h in hits}
+    extra = []
+    for h in list(hits):
+        nxt = h["chunk_index"] + 1
+        if nxt not in present:
+            neighbor = get_chunk_by_index(user_id, document_id, nxt)
+            if neighbor is not None:
+                extra.append(neighbor)
+                present.add(nxt)
+    combined = hits + extra if extra else hits
+    combined.sort(key=lambda h: h.get("chunk_index", 0))
+    return combined
+
+
+# ---------------------------------------------------------------------------
 # Context builder
 # ---------------------------------------------------------------------------
 
@@ -120,7 +148,8 @@ def build_rag_context(
     - Synthesis ("liste tous les produits") → fetches up to RAG_SYNTHESIS_TOP_K
       chunks with a relaxed distance threshold. When ``document_id`` is given,
       retrieves ALL chunks in document order (best for full catalogues).
-    - Follow-up ("et les prix ?") → relaxed threshold, moderate top_k.
+    - Follow-up ("et les prix ?") → full document order when document_id is
+      known (same as synthesis); targeted search otherwise.
     - Regular → standard threshold and top_k.
     """
     if _is_non_documentary_query(query):
@@ -147,13 +176,21 @@ def build_rag_context(
             # Sort by document + chunk order for coherent reading.
             hits.sort(key=lambda h: (h.get("document_id") or 0, h.get("chunk_index", 0)))
     elif is_followup:
-        hits = search(
-            user_id,
-            query,
-            top_k=RAG_FOLLOWUP_TOP_K,
-            max_distance=RAG_FOLLOWUP_DISTANCE,
-            document_id=document_id,
-        )
+        if document_id is not None:
+            # "Et les prix ?" after "Quels sont les produits ?" is semantically
+            # a partial synthesis on an already-identified document — return the
+            # full document in reading order so every product and its price are
+            # both present in the same context window.
+            hits = get_document_chunks(user_id, document_id)[:RAG_SYNTHESIS_TOP_K]
+        else:
+            hits = search(
+                user_id,
+                query,
+                top_k=RAG_FOLLOWUP_TOP_K,
+                max_distance=RAG_FOLLOWUP_DISTANCE,
+                document_id=None,
+            )
+            hits = _expand_and_sort(hits, user_id, None)
     else:
         hits = search(
             user_id,
@@ -162,21 +199,7 @@ def build_rag_context(
             max_distance=RAG_DISTANCE_THRESHOLD,
             document_id=document_id,
         )
-        # Neighbor expansion: for each hit, also include the immediately following
-        # chunk (N+1) so that name-in-N / price-in-N+1 splits are covered.
-        if hits and document_id is not None:
-            present_indices = {h["chunk_index"] for h in hits}
-            extra = []
-            for h in list(hits):
-                next_idx = h["chunk_index"] + 1
-                if next_idx not in present_indices:
-                    neighbor = get_chunk_by_index(user_id, document_id, next_idx)
-                    if neighbor is not None:
-                        extra.append(neighbor)
-                        present_indices.add(next_idx)
-            if extra:
-                hits = hits + extra
-                hits.sort(key=lambda h: h.get("chunk_index", 0))
+        hits = _expand_and_sort(hits, user_id, document_id)
 
     if not hits:
         return None, []
