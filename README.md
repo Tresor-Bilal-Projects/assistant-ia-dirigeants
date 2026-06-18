@@ -408,12 +408,12 @@ Une suite `pytest` formalisée (unitaire + intégration) reste à écrire pour a
 
 Le projet a été réalisé dans un cadre académique collaboratif.
 
-| Membre        | Rôle principal                                                                                       |
-| ------------- | ------------------------------------------------------------------------------------------------------ |
-| Nathan        | Architecture backend, API Flask, RAG, sécurité, isolation multi-utilisateur                             |
-| Trésor        | Frontend, UX/UI, architecture JavaScript, intégration                                                   |
-| Pierre-Thyrel | Données, tests, validation fonctionnelle, support technique                                              |
-| Lina          | Documentation, organisation projet, suivi des livrables                                                  |
+| Membre        | Rôle principal                                                                                                               |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Nathan        | Backend, API Flask, intégration IA, logique métier, architecture serveur, préparation RAG                                    |
+| Trésor        | Backend (API Flask), intégration IA, Frontend, UX/UI, architecture JavaScript, gestion des conversations, persistance locale |
+| Pierre-Thyrel | Tests, validation fonctionnelle, support technique                                                                           |
+| Lina          | Documentation, organisation projet, suivi des livrables                                                                      |
 
 Encadrement : ECE Paris / Skills4Mind — Dr. Taha Ridène, M. Vincent Ferré (Groupe Asten).
 
