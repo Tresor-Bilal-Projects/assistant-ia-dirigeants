@@ -12,8 +12,7 @@ selectedFile
 } from "./upload.js";
 
 import {
-initConversationManager,
-addMessageToConversation
+initConversationManager
 } from "./conversationManager.js";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -27,9 +26,13 @@ const MIN_HEIGHT = 46;
 const MAX_HEIGHT = 120;
 
 let manager = null;
+let activeDocumentId = null;
 
 function renderConversation(conversation) {
     messages.innerHTML = "";
+    // Switching conversations clears the active document focus so a previous
+    // upload does not bleed into an unrelated conversation.
+    activeDocumentId = null;
 
     if (!conversation) return;
 
@@ -74,13 +77,6 @@ async function sendMessage() {
 
     if (text) {
         addMessage(text, "user", messages);
-
-        addMessageToConversation(
-            "user",
-            text
-        );
-
-        manager.refreshSidebar();
     }
 
     input.value = "";
@@ -110,6 +106,11 @@ async function sendMessage() {
                 throw new Error(fileData.error);
             }
 
+            // Track the active document so RAG queries focus on it.
+            if (fileData?.document_id) {
+                activeDocumentId = fileData.document_id;
+            }
+
             resetSelectedFile();
         }
 
@@ -120,8 +121,14 @@ async function sendMessage() {
         } else {
             const response = await sendMessageAPI(
                 text,
-                fileData
+                manager.getCurrentConversationId(),
+                activeDocumentId
             );
+
+            // Backend may have created the conversation; adopt its id.
+            if (response?.conversation_id) {
+                manager.setCurrentConversation(response.conversation_id);
+            }
 
             const safeResponse =
                 response?.answer ||
@@ -147,11 +154,6 @@ async function sendMessage() {
             }
         }
 
-        addMessageToConversation(
-            "assistant",
-            botText
-        );
-
         manager.refreshSidebar();
 
         typeEffect(
@@ -174,13 +176,6 @@ async function sendMessage() {
                 ${errorMessage}
             </p>
         `;
-
-        addMessageToConversation(
-            "assistant",
-            errorMessage
-        );
-
-        manager.refreshSidebar();
 
         setLoadingState(
             input,
