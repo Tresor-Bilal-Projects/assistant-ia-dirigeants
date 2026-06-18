@@ -111,6 +111,29 @@ def search(
     return hits
 
 
+def get_chunk_by_index(user_id, document_id, chunk_index: int) -> dict | None:
+    """Fetch a single chunk by its exact chunk_index (used for neighbor expansion)."""
+    collection = get_user_collection(user_id)
+    chunk_id = f"{int(user_id)}_{int(document_id)}_{int(chunk_index)}"
+    try:
+        records = collection.get(ids=[chunk_id], include=["documents", "metadatas"])
+    except Exception:
+        return None
+    texts = records.get("documents") or []
+    metas = records.get("metadatas") or []
+    if not texts:
+        return None
+    meta = (metas[0] or {}) if metas else {}
+    return {
+        "content": texts[0],
+        "source": meta.get("source", "inconnu"),
+        "document_id": meta.get("document_id"),
+        "chunk_index": meta.get("chunk_index", chunk_index),
+        "page": meta.get("page", 0),
+        "distance": None,
+    }
+
+
 def get_document_chunks(user_id, document_id) -> list[dict]:
     """Return ALL chunks of one document ordered by chunk_index.
 

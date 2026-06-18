@@ -9,7 +9,7 @@ from config import (
     RAG_SYNTHESIS_TOP_K,
     TOP_K,
 )
-from modules.services.vectorstore import get_document_chunks, get_stats, search
+from modules.services.vectorstore import get_chunk_by_index, get_document_chunks, get_stats, search
 
 
 def _normalize(text: str) -> str:
@@ -162,6 +162,21 @@ def build_rag_context(
             max_distance=RAG_DISTANCE_THRESHOLD,
             document_id=document_id,
         )
+        # Neighbor expansion: for each hit, also include the immediately following
+        # chunk (N+1) so that name-in-N / price-in-N+1 splits are covered.
+        if hits and document_id is not None:
+            present_indices = {h["chunk_index"] for h in hits}
+            extra = []
+            for h in list(hits):
+                next_idx = h["chunk_index"] + 1
+                if next_idx not in present_indices:
+                    neighbor = get_chunk_by_index(user_id, document_id, next_idx)
+                    if neighbor is not None:
+                        extra.append(neighbor)
+                        present_indices.add(next_idx)
+            if extra:
+                hits = hits + extra
+                hits.sort(key=lambda h: h.get("chunk_index", 0))
 
     if not hits:
         return None, []
