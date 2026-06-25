@@ -224,11 +224,13 @@ export function initConversationManager(renderConversation) {
     /* INITIAL LOAD */
     (async () => {
         conversationsCache = await listConversations();
-        if (!conversationsCache.length) {
-            const created = await createConversation();
-            conversationsCache = created ? [created] : [];
-        }
-        if (conversationsCache.length) {
+        // Toujours créer un nouveau chat vide au chargement (style Claude/ChatGPT)
+        // L'historique reste visible dans la sidebar, mais on part d'une page blanche
+        const created = await createConversation();
+        if (created) {
+            conversationsCache = await listConversations();
+            await openConversation(created.id);
+        } else if (conversationsCache.length) {
             await openConversation(conversationsCache[0].id);
         }
     })();
