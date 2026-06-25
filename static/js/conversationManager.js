@@ -70,6 +70,7 @@ export function initConversationManager(renderConversation) {
             /* OPEN */
             item.addEventListener("click", (e) => {
                 if (e.target.closest(".conversation-actions")) return;
+                if (e.target.closest(".conv-title-input")) return;
                 openConversation(conversation.id);
             });
 
@@ -86,36 +87,105 @@ export function initConversationManager(renderConversation) {
                 if (!isOpen) menu.style.display = "flex";
             });
 
-            /* RENAME */
-            item.querySelector(".rename-chat").addEventListener("click", async (e) => {
+            /* RENAME — inline editing (double-click on title) */
+            titleSpan.addEventListener("dblclick", (e) => {
                 e.stopPropagation();
-                menu.style.display = "none";
-                const newTitle = prompt("Nom de la conversation", conversation.title);
-                if (!newTitle || !newTitle.trim()) return;
-                await renameConversation(conversation.id, newTitle.trim());
-                await refreshSidebar();
+
+                const input = document.createElement("input");
+                input.className = "conv-title-input";
+                input.value = conversation.title || "";
+                titleSpan.replaceWith(input);
+                input.focus();
+                input.select();
+
+                let committed = false;
+
+                async function commitSave() {
+                    if (committed) return;
+                    committed = true;
+                    const newTitle = input.value.trim();
+                    if (newTitle) {
+                        await renameConversation(conversation.id, newTitle);
+                    }
+                    await refreshSidebar();
+                }
+
+                function commitCancel() {
+                    if (committed) return;
+                    committed = true;
+                    refreshSidebar();
+                }
+
+                input.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") { e.preventDefault(); commitSave(); }
+                    if (e.key === "Escape") { e.stopPropagation(); commitCancel(); }
+                });
+                input.addEventListener("blur", commitSave);
+                input.addEventListener("click", (e) => e.stopPropagation());
             });
 
-            /* DELETE */
-            item.querySelector(".delete-chat").addEventListener("click", async (e) => {
+            /* RENAME BUTTON (menu) — triggers same inline editing */
+            item.querySelector(".rename-chat").addEventListener("click", (e) => {
                 e.stopPropagation();
                 menu.style.display = "none";
-                if (!confirm("Supprimer cette conversation ?")) return;
+                titleSpan.dispatchEvent(new MouseEvent("dblclick", { bubbles: false }));
+            });
 
-                await deleteConversation(conversation.id);
-                conversationsCache = await listConversations();
+            /* DELETE — inline confirmation */
+            item.querySelector(".delete-chat").addEventListener("click", (e) => {
+                e.stopPropagation();
+                menu.style.display = "none";
 
-                if (currentConversationId === conversation.id) {
-                    if (conversationsCache.length) {
-                        await openConversation(conversationsCache[0].id);
-                    } else {
-                        const created = await createConversation();
-                        conversationsCache = await listConversations();
-                        await openConversation(created.id);
+                const confirmDiv = document.createElement("div");
+                confirmDiv.style.cssText = "display:flex; gap:6px; align-items:center; flex-shrink:0;";
+                confirmDiv.addEventListener("click", (e) => e.stopPropagation());
+
+                const confirmBtn = document.createElement("button");
+                confirmBtn.textContent = "Confirmer";
+                confirmBtn.type = "button";
+                confirmBtn.style.cssText = "font-size:11px; padding:2px 8px; border-radius:4px; border:none; background:rgba(239,68,68,0.15); color:#ef4444; cursor:pointer;";
+
+                const cancelBtn = document.createElement("button");
+                cancelBtn.textContent = "Annuler";
+                cancelBtn.type = "button";
+                cancelBtn.style.cssText = "font-size:11px; padding:2px 8px; border-radius:4px; border:none; background:rgba(100,116,139,0.15); color:#64748b; cursor:pointer;";
+
+                confirmDiv.appendChild(confirmBtn);
+                confirmDiv.appendChild(cancelBtn);
+                actions.replaceWith(confirmDiv);
+
+                function outsideHandler(e) {
+                    if (!confirmDiv.contains(e.target)) {
+                        document.removeEventListener("click", outsideHandler);
+                        renderSidebar();
                     }
-                } else {
-                    renderSidebar();
                 }
+
+                confirmBtn.addEventListener("click", async () => {
+                    document.removeEventListener("click", outsideHandler);
+                    await deleteConversation(conversation.id);
+                    conversationsCache = await listConversations();
+                    if (currentConversationId === conversation.id) {
+                        if (conversationsCache.length) {
+                            await openConversation(conversationsCache[0].id);
+                        } else {
+                            const created = await createConversation();
+                            conversationsCache = await listConversations();
+                            await openConversation(created.id);
+                        }
+                    } else {
+                        renderSidebar();
+                    }
+                });
+
+                cancelBtn.addEventListener("click", () => {
+                    document.removeEventListener("click", outsideHandler);
+                    renderSidebar();
+                });
+
+                setTimeout(() => {
+                    document.addEventListener("click", outsideHandler);
+                }, 0);
             });
 
             conversationList.appendChild(item);
@@ -136,8 +206,15 @@ export function initConversationManager(renderConversation) {
 
     searchInput?.addEventListener("input", renderSidebar);
 
-    /* NEW CHAT */
+    /* NEW CHAT — FIX 1: skip if current conversation is already a fresh "Nouveau chat" */
     newChatBtn.addEventListener("click", async () => {
+        const currentId = getCurrentConversationId();
+        if (currentId) {
+            const current = conversationsCache.find(c => c.id === currentId);
+            if (current && current.title === "Nouveau chat") {
+                return;
+            }
+        }
         const created = await createConversation();
         if (!created) return;
         conversationsCache = await listConversations();

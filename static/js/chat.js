@@ -21,6 +21,7 @@ const input = document.getElementById("user-input");
 const button = document.getElementById("send-btn");
 const uploadBtn = document.getElementById("upload-btn");
 const messages = document.getElementById("messages");
+const welcomeScreen = document.getElementById("welcome-screen");
 
 const MIN_HEIGHT = 46;
 const MAX_HEIGHT = 120;
@@ -28,13 +29,29 @@ const MAX_HEIGHT = 120;
 let manager = null;
 let activeDocumentId = null;
 
+function dismissWelcome() {
+    if (welcomeScreen) {
+        welcomeScreen.style.display = "none";
+    }
+    if (messages) {
+        messages.style.display = "";
+    }
+}
+
 function renderConversation(conversation) {
     messages.innerHTML = "";
     // Switching conversations clears the active document focus so a previous
     // upload does not bleed into an unrelated conversation.
     activeDocumentId = null;
 
-    if (!conversation) return;
+    if (!conversation || conversation.messages.length === 0) {
+        // Empty or missing conversation — show the welcome screen.
+        if (welcomeScreen) welcomeScreen.style.display = "flex";
+        if (messages) messages.style.display = "none";
+        if (!conversation) return;
+    } else {
+        dismissWelcome();
+    }
 
     conversation.messages.forEach((msg) => {
         addMessage(
@@ -48,6 +65,16 @@ function renderConversation(conversation) {
 }
 
 manager = initConversationManager(renderConversation);
+
+// Welcome chips — copy suggestion text into the textarea and dismiss.
+document.querySelectorAll(".welcome-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+        input.value = chip.dataset.text;
+        dismissWelcome();
+        input.focus();
+        autoResize();
+    });
+});
 
 function autoResize() {
     input.style.height = MIN_HEIGHT + "px";
@@ -69,6 +96,8 @@ input.addEventListener("input", autoResize);
 autoResize();
 
 async function sendMessage() {
+    dismissWelcome();
+
     const text = input.value.trim();
 
     if (!text && !selectedFile) {

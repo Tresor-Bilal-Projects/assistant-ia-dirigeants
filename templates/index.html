@@ -34,7 +34,19 @@
 
         <div class="chat-wrapper">
 
-            <div id="messages"></div>
+            <div id="welcome-screen" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px; gap:24px; text-align:center;">
+                <div>
+                    <h2 style="font-size:1.6rem; font-weight:700; color:#F8FAFC; margin:0 0 10px;">Bonjour, {{ current_user.name }} !</h2>
+                    <p style="font-size:0.95rem; color:#64748B; margin:0; line-height:1.6;">Comment puis-je vous aider avec vos documents aujourd'hui ?</p>
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+                    <button class="welcome-chip" data-text="Résume ce document" style="padding:8px 16px; border-radius:100px; border:1px solid rgba(59,130,246,0.35); background:rgba(59,130,246,0.08); color:#93C5FD; font-size:13px; font-weight:500; cursor:pointer; transition:background 0.15s, border-color 0.15s;">Résume ce document</button>
+                    <button class="welcome-chip" data-text="Quels sont les points clés ?" style="padding:8px 16px; border-radius:100px; border:1px solid rgba(59,130,246,0.35); background:rgba(59,130,246,0.08); color:#93C5FD; font-size:13px; font-weight:500; cursor:pointer; transition:background 0.15s, border-color 0.15s;">Quels sont les points clés ?</button>
+                    <button class="welcome-chip" data-text="Liste toutes les informations" style="padding:8px 16px; border-radius:100px; border:1px solid rgba(59,130,246,0.35); background:rgba(59,130,246,0.08); color:#93C5FD; font-size:13px; font-weight:500; cursor:pointer; transition:background 0.15s, border-color 0.15s;">Liste toutes les informations</button>
+                </div>
+            </div>
+
+            <div id="messages" style="display:none;"></div>
 
             <div id="input-area">
 
