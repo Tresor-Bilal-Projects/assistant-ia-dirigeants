@@ -41,5 +41,19 @@
 
 
 {% block scripts %}{% endblock %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const flashes = document.querySelectorAll('.flash');
+    flashes.forEach(function (el) {
+      setTimeout(function () {
+        el.classList.add('fade-out');
+        setTimeout(function () {
+          el.remove();
+        }, 420);
+      }, 3000);
+    });
+  });
+</script>
 </body>
 </html>
