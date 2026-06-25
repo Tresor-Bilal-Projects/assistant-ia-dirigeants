@@ -557,6 +557,20 @@ main {
     color: #ef4444;
 }
 
+.conv-title-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(59,130,246,0.5);
+    color: inherit;
+    font-size: inherit;
+    font-family: inherit;
+    font-weight: inherit;
+    width: 100%;
+    outline: none;
+    padding: 0;
+    margin: 0;
+}
+
 /* ───────────────────────────── AUTH & HEADER USER MENU ───────────────────── */
 
 .user-menu {
