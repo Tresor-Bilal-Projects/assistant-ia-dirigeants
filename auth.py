@@ -54,6 +54,7 @@ def login():
         user = User.query.filter_by(email=email).first()
         if user and user.check_password(form.password.data):
             login_user(user)
+            flash(f"Content de vous revoir, {user.name} !", "success")
             return redirect(_safe_next(request.args.get("next")))
         flash("Email ou mot de passe incorrect.", "error")
 
