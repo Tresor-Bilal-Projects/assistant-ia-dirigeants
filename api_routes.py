@@ -37,6 +37,7 @@ def list_conversations():
     conversations = (
         Conversation.query
         .filter_by(user_id=current_user.id)
+        .filter(Conversation.messages.any())
         .order_by(Conversation.updated_at.desc())
         .all()
     )
