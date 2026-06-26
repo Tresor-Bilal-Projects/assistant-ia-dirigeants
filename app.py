@@ -8,8 +8,6 @@ load_dotenv()
 
 from flask import Flask, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
 from werkzeug.utils import secure_filename
 
 from config import ALLOWED_EXTENSIONS, COLLECTION_NAME, MAX_UPLOAD_MB, TOP_K
@@ -29,17 +27,6 @@ from modules.services.user_files import (
 from modules.services.vectorstore import delete_document_chunks, delete_legacy_collection
 
 
-@event.listens_for(Engine, "connect")
-def _enable_sqlite_fk(dbapi_connection, connection_record):
-    """Enforce ON DELETE CASCADE for SQLite (off by default)."""
-    try:
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.close()
-    except Exception:
-        pass
-
-
 app = Flask(__name__)
 
 # --- Security / session configuration ---------------------------------------
@@ -54,8 +41,9 @@ if not _secret_key:
 app.config["SECRET_KEY"] = _secret_key
 
 os.makedirs(app.instance_path, exist_ok=True)
-app.config["SQLALCHEMY_DATABASE_URI"] = (
-    "sqlite:///" + os.path.join(app.instance_path, "users.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "DATABASE_URL",
+    "mysql+pymysql://root:password@localhost:3306/contexta"
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SESSION_COOKIE_HTTPONLY"] = True

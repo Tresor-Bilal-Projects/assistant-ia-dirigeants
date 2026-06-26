@@ -8,3 +8,5 @@ flask-sqlalchemy>=3.1
 flask-login>=0.6
 flask-wtf>=1.2
 email-validator>=2.0
+PyMySQL>=1.1
+cryptography>=41.0
