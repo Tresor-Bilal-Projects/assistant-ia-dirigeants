@@ -1,316 +1,588 @@
-# Assistant IA pour Dirigeants
+# 🤖 Assistant IA pour Dirigeants
+
+> **Projet réalisé dans le cadre d'un stage chez Skill4Mind, en partenariat avec l'ECE Paris, durant le Bachelor 2.**
+
+**Assistant IA pour Dirigeants** est une application web conversationnelle intelligente conçue pour accompagner les dirigeants dans l'**analyse de documents d'entreprise**, la recherche d'informations et la **prise de décision**.
+
+L'application combine des **modèles de langage (LLM)** avec une architecture **RAG (Retrieval-Augmented Generation)** afin de produire des réponses contextualisées à partir de documents internes aux formats **PDF, DOCX et TXT**.
+
+Le projet intègre également un système d'authentification, une gestion persistante des conversations et une isolation des données entre utilisateurs.
 
 ---
 
-# 1. Présentation du projet
+# 📌 Présentation
 
-Assistant IA pour Dirigeants est une application web conversationnelle destinée à accompagner les dirigeants d'entreprise dans leurs réflexions stratégiques, opérationnelles et décisionnelles.
+L'objectif du projet est de développer un assistant conversationnel capable d'accompagner les dirigeants dans leurs réflexions professionnelles en exploitant leurs documents d'entreprise.
 
-L'application permet d'interagir en langage naturel avec un modèle d'intelligence artificielle via une interface moderne de type assistant SaaS.
+L'application fonctionne selon deux modes principaux.
 
-Le projet repose sur l'intégration d'un modèle de langage via Hugging Face Router API, couplée à une architecture **RAG** (Retrieval-Augmented Generation) fonctionnelle : chaque utilisateur importe ses propres documents internes (PDF, TXT, DOCX) et obtient des réponses contextualisées et sourcées, isolées de celles des autres utilisateurs.
+### 💬 Conversation générale
 
----
+Pour les questions ne nécessitant pas d'informations provenant des documents, la requête est directement transmise au modèle de langage.
 
-# 2. Objectifs du projet
-
-L'objectif du projet est de :
-
-* Fournir un assistant conversationnel professionnel pour les dirigeants
-* Faciliter l'analyse et la prise de décision à partir des documents internes de l'entreprise
-* Offrir une expérience utilisateur moderne de type SaaS
-* Permettre à chaque utilisateur de disposer d'un espace personnel isolé : ses documents, ses conversations, son historique
-* Garantir qu'aucun utilisateur ne puisse accéder aux données d'un autre
-* Développer une solution IA fiable, sourcée et adaptée aux besoins des entreprises
-
----
-
-# 3. État actuel du projet
-
-Le projet est actuellement au stade :
-
-> Authentification, isolation multi-utilisateur et pipeline RAG fonctionnels, validés par des tests manuels en conditions réelles. L'interface de gestion documentaire avancée et le durcissement sécurité pour une mise en production restent à construire.
-
----
-
-## ✔ Backend
-
-Le backend assure :
-
-* Authentification complète (inscription, connexion, déconnexion) via Flask-Login
-* Isolation stricte des données par utilisateur, vérifiée côté serveur sur chaque endpoint
-* Pipeline RAG complet : extraction, découpage, indexation vectorielle, recherche, génération
-* Création et gestion des routes API Flask (`/chat`, `/upload`, `/api/conversations`, `/api/documents`, `/api/account`, `/api/rag/status`)
-* Intégration avec l'API Hugging Face Router
-* Gestion des requêtes utilisateur et génération de réponses IA contextualisées et sourcées
-* Gestion des erreurs serveur
-* Structuration du prompt système, avec adaptation selon la présence ou non de contexte documentaire
-* Architecture backend modulaire (blueprints, services séparés)
-
----
-
-## ✔ Frontend
-
-Le frontend dispose des fonctionnalités suivantes :
-
-* Interface conversationnelle type ChatGPT
-* Design SaaS moderne (dark mode)
-* Pages de connexion et d'inscription cohérentes avec le branding de l'application
-* Affichage dynamique des messages
-* Support Markdown
-* Typing effect
-* Auto-scroll
-* Auto-resize du textarea
-* Bouton copier sur les réponses IA
-* Upload de documents intégré au chat, avec retour visuel sur l'indexation
-* Affichage des sources documentaires sous chaque réponse sourcée
-* Gestion des conversations (création, recherche, renommage, suppression)
-* Historique des conversations persistant en base, propre à chaque utilisateur
-* Sidebar interactive
-* Architecture JavaScript modulaire
-
----
-
-# 4. Architecture du projet
-
-## Backend
-
-### Technologies
-
-* Python
-* Flask (organisé en blueprints)
-* Flask-SQLAlchemy (modèles relationnels)
-* Flask-Login (authentification, sessions)
-* Flask-WTF (formulaires, protection CSRF)
-* ChromaDB (base vectorielle, persistante, isolée par utilisateur)
-* pypdf / python-docx (extraction de documents)
-* Hugging Face Router API (inférence du modèle de langage)
-* python-dotenv
-
-### Responsabilités
-
-* API REST `/chat`, `/upload`, et API privée `/api/*` (conversations, documents, compte)
-* Authentification et gestion de session
-* Pipeline RAG : extraction → nettoyage → découpage → indexation → recherche → génération
-* Isolation des données par `user_id` à chaque étape (fichiers, base vectorielle, base relationnelle)
-* Communication avec le modèle IA
-* Traitement des requêtes utilisateur
-* Retour des réponses JSON
-* Gestion des erreurs
-
----
-
-## Frontend
-
-### Technologies
-
-* HTML5
-* CSS3
-* JavaScript ES6 Modules
-* Marked.js
-
-### Responsabilités
-
-* Interface utilisateur (chat, authentification)
-* Gestion des conversations
-* Affichage des messages et des sources documentaires
-* Upload de fichiers
-* Communication avec le backend (requêtes CSRF-aware)
-* Persistance des données côté serveur (plus de dépendance à `localStorage` pour l'historique)
-
----
-
-# 5. Modèle IA utilisé
-
-### Fournisseur
-
+```text
+Utilisateur
+    ↓
+Interface conversationnelle
+    ↓
+Backend Flask
+    ↓
 Hugging Face Router API
-
-### Modèle
-
-```plaintext id="model_fix"
-Qwen/Qwen2.5-7B-Instruct
+    ↓
+LLM
+    ↓
+Réponse
 ```
 
-Configurable via la variable d'environnement `HF_CHAT_MODEL`. Le modèle `meta-llama/Llama-3.1-8B-Instruct` reste une alternative possible mais n'est pas celui actuellement déployé par défaut (accès "gated" sur Hugging Face, non débloqué pour ce projet).
+### 📚 Analyse documentaire avec RAG
 
-Le modèle génère des réponses adaptées à un contexte professionnel et décisionnel, et s'appuie sur les documents internes de l'utilisateur lorsqu'un contexte RAG est disponible.
+Lorsqu'une question nécessite des informations présentes dans les documents de l'utilisateur, le système recherche les passages les plus pertinents avant de les transmettre au modèle.
 
----
-
-# 6. Fonctionnement global
-
-## Sans document (conversation générale)
-
-1. L'utilisateur envoie un message via l'interface
-2. Flask reçoit la requête `/chat`
-3. Le système détecte qu'aucun contexte documentaire n'est pertinent (salutation, question générale)
-4. Le backend transmet directement la requête au modèle IA via Hugging Face
-5. La réponse est renvoyée et affichée dans l'interface
-
-## Avec documents (RAG)
-
-1. L'utilisateur a préalablement importé un ou plusieurs documents, indexés dans sa collection vectorielle personnelle
-2. L'utilisateur envoie une question
-3. Le système classe la question (précise, synthèse globale, ou suivi conversationnel) et choisit la stratégie de récupération adaptée (voir §7)
-4. Les passages pertinents sont récupérés dans la collection ChromaDB de l'utilisateur uniquement
-5. Un prompt enrichi (question + extraits documentaires) est envoyé au modèle IA
-6. Le modèle génère une réponse synthétisée à partir des extraits fournis
-7. La réponse, accompagnée des sources utilisées, est renvoyée et affichée dans l'interface
-
----
-
-# 7. Fonctionnement du RAG en détail
-
-Chaque question est d'abord classée en une des quatre catégories suivantes, avant toute recherche documentaire :
-
-| Type de question | Exemple | Stratégie |
-|---|---|---|
-| **Non-documentaire** | "Bonjour", "qui es-tu ?" | Aucune recherche — réponse directe du modèle |
-| **Précise** | "Quel est le prix de l'ErgoZen V3 ?" | Recherche vectorielle ciblée (Top-K) + récupération du chunk suivant (évite qu'un nom et son prix soient scindés entre deux chunks adjacents) |
-| **Synthèse globale** | "Liste tous les produits", "résume le document" | Récupération de l'intégralité du document actif, dans l'ordre de lecture |
-| **Suivi conversationnel** | "Et les prix ?" (après "quels sont les produits ?") | Si un document est actif : même stratégie que la synthèse globale. Sinon : recherche ciblée avec seuil assoupli |
-
-Chaque stratégie a son propre seuil de distance vectorielle, calibré empiriquement (voir `config.py`). Le prompt système interdit explicitement au modèle de demander des clarifications lorsqu'un contexte documentaire est fourni : il doit synthétiser directement ce qui est disponible et signaler ce qui est absent plutôt que de l'inventer.
-
-L'extraction de texte gère aussi un cas particulier : certains PDF générés par des outils de design (Canva, InDesign) extraient chaque lettre séparément à cause du kerning. Un nettoyage conditionnel détecte et corrige automatiquement ce problème sans affecter les documents extraits normalement.
+```text
+Documents PDF / DOCX / TXT
+            ↓
+     Extraction du texte
+            ↓
+         Nettoyage
+            ↓
+     Découpage en chunks
+            ↓
+       Vectorisation
+            ↓
+         ChromaDB
+            ↓
+    Recherche sémantique
+            ↓
+   Contexte documentaire
+            ↓
+    Hugging Face Router
+            ↓
+        LLM
+            ↓
+Réponse contextualisée
+```
 
 ---
 
-# 8. Gestion des conversations
+# 🎯 Objectifs
 
-* Création automatique de conversations
-* Historique persistant en base de données (SQLite), propre à chaque utilisateur
-* Renommage et suppression
-* Navigation multi-conversations
-* Suppression en cascade : effacer une conversation efface ses messages associés
+Le projet avait pour objectifs de :
 
----
-
-# 9. Isolation multi-utilisateur
-
-* Une collection ChromaDB dédiée par utilisateur (`user_<id>`) — isolation structurelle, pas seulement un filtre applicatif
-* Fichiers uploadés stockés par utilisateur (`data/uploads/<user_id>/<nom_interne_aléatoire>`)
-* Conversations, messages et documents rattachés en base à un `user_id`, avec vérification d'appartenance sur chaque endpoint
-* Toute tentative d'accès à une ressource d'un autre utilisateur renvoie `404`, sans révéler son existence
-* Suppression en cascade (compte, conversation, document → tout le contenu associé, y compris les chunks vectoriels et les fichiers physiques)
+* Développer un assistant conversationnel destiné aux dirigeants.
+* Faciliter l'analyse de documents professionnels.
+* Exploiter des modèles de langage pour produire des réponses en langage naturel.
+* Implémenter une architecture **RAG** permettant de contextualiser les réponses.
+* Permettre l'import de documents **PDF, DOCX et TXT**.
+* Fournir une interface conversationnelle moderne et intuitive.
+* Permettre à chaque utilisateur de disposer d'un espace personnel.
+* Isoler les documents, conversations et messages entre utilisateurs.
+* Intégrer un modèle de langage via **Hugging Face Router API**.
+* Concevoir une architecture backend modulaire et évolutive.
 
 ---
 
-# 10. Sécurité
+# ✨ Fonctionnalités principales
 
-* Mots de passe hachés (Werkzeug), jamais stockés en clair
-* Variables d'environnement pour les clés API et secrets
-* Aucune clé exposée dans le code source
-* Séparation frontend / backend
-* Fichier `.env` ignoré par Git
-* Sessions sécurisées (cookies `HttpOnly`, `SameSite=Lax`)
-* Protection CSRF sur les formulaires d'authentification
-* Isolation des données vérifiée côté serveur, jamais côté client uniquement
-* Validation du format et de la taille des fichiers uploadés
+## 🤖 Assistant conversationnel
 
-### À compléter avant une mise en production réelle
+* Interface conversationnelle de type assistant IA.
+* Génération de réponses via un LLM.
+* Support du Markdown.
+* Affichage dynamique des messages.
+* Effet de frappe sur les réponses.
+* Bouton de copie des réponses.
+* Auto-scroll.
+* Redimensionnement automatique de la zone de saisie.
 
-* Rate limiting (brute-force sur login, abus d'upload/chat)
-* Chiffrement au repos des documents sensibles
-* Journalisation des accès
-* Défense renforcée contre l'injection de prompt
-* En-têtes de sécurité (CSP), cookies `Secure` (nécessite HTTPS)
+## 💬 Gestion des conversations
 
-Cadre de référence : RGPD (UE 2016/679), recommandations CNIL, OWASP Top 10, OWASP LLM Top 10.
+* Création de conversations.
+* Navigation entre plusieurs conversations.
+* Renommage des conversations.
+* Suppression des conversations.
+* Historique persistant côté serveur.
+* Suppression en cascade des messages associés.
+
+## 📄 Analyse documentaire
+
+L'utilisateur peut importer des documents aux formats :
+
+* `.pdf`
+* `.docx`
+* `.txt`
+
+Les documents sont ensuite extraits, nettoyés, découpés et indexés afin d'être exploités par le système RAG.
+
+## 🔎 Réponses contextualisées et sourcées
+
+Lorsque la réponse s'appuie sur des documents, les passages pertinents sont transmis au modèle de langage et les sources utilisées sont retournées au frontend.
+
+L'utilisateur peut ainsi identifier les documents ayant servi à générer la réponse.
 
 ---
 
-# 11. Structure du projet
+# 🧠 Architecture RAG
 
-```plaintext id="structure_final"
+Le système RAG permet au modèle de langage d'utiliser les documents de l'utilisateur comme contexte.
+
+Le pipeline est organisé comme suit :
+
+```text
+                 ┌─────────────────┐
+                 │     Document    │
+                 │ PDF / DOCX / TXT│
+                 └────────┬────────┘
+                          ↓
+                 ┌─────────────────┐
+                 │ Extraction texte│
+                 └────────┬────────┘
+                          ↓
+                 ┌─────────────────┐
+                 │ Nettoyage       │
+                 └────────┬────────┘
+                          ↓
+                 ┌─────────────────┐
+                 │ Chunking        │
+                 └────────┬────────┘
+                          ↓
+                 ┌─────────────────┐
+                 │ Vectorisation   │
+                 └────────┬────────┘
+                          ↓
+                 ┌─────────────────┐
+                 │    ChromaDB     │
+                 └────────┬────────┘
+                          │
+                          │ Recherche
+                          ↓
+                 ┌─────────────────┐
+                 │ Chunks pertinents│
+                 └────────┬────────┘
+                          ↓
+                 ┌─────────────────┐
+                 │ Contexte +      │
+                 │ question        │
+                 └────────┬────────┘
+                          ↓
+                 ┌─────────────────┐
+                 │      LLM        │
+                 └────────┬────────┘
+                          ↓
+                 ┌─────────────────┐
+                 │ Réponse finale  │
+                 └─────────────────┘
+```
+
+---
+
+# 🔎 Stratégies de recherche
+
+Le système adapte la récupération documentaire au type de question.
+
+| Type de question          | Exemple                             | Stratégie                                               |
+| ------------------------- | ----------------------------------- | ------------------------------------------------------- |
+| **Non documentaire**      | « Bonjour, qui es-tu ? »            | Aucune recherche documentaire                           |
+| **Question précise**      | « Quel est le prix du produit X ? » | Recherche vectorielle ciblée                            |
+| **Synthèse globale**      | « Résume le document »              | Récupération du contenu pertinent du document           |
+| **Suivi conversationnel** | « Et les prix ? »                   | Utilisation du contexte documentaire et conversationnel |
+
+Pour les questions précises, le système effectue une recherche vectorielle Top-K et peut récupérer le chunk suivant afin de préserver le contexte lorsque des informations complémentaires sont réparties sur plusieurs fragments.
+
+Pour les demandes de synthèse globale, le système peut récupérer le contenu du document actif dans son ordre de lecture.
+
+Les seuils de pertinence sont configurables dans `config.py`.
+
+---
+
+# 📄 Traitement des documents
+
+Le projet prend en charge l'extraction de contenu depuis :
+
+* **PDF** via `pypdf`
+* **DOCX** via `python-docx`
+* **TXT**
+
+Une étape de nettoyage permet de traiter certains documents dont l'extraction produit un texte dégradé.
+
+Un cas particulier a notamment été pris en compte pour certains PDF générés avec des outils de conception tels que **Canva ou InDesign**, dans lesquels les caractères peuvent être extraits séparément à cause du kerning.
+
+Le système détecte ce comportement et applique un nettoyage conditionnel afin de reconstruire correctement les mots sans modifier les documents normalement extraits.
+
+---
+
+# 🗄️ Stockage des données
+
+L'application utilise deux systèmes de stockage complémentaires, chacun ayant un rôle distinct.
+
+## MySQL — Données applicatives
+
+**MySQL** constitue la base de données relationnelle de l'application.
+
+Elle stocke notamment :
+
+* les utilisateurs ;
+* les documents ;
+* les conversations ;
+* les messages ;
+* les relations entre les différentes ressources.
+
+Le projet a initialement été développé avec **SQLite**, puis migré vers **MySQL** afin d'utiliser une solution serveur mieux adaptée à une application web multi-utilisateur et à un éventuel déploiement.
+
+L'accès à la base est réalisé via **Flask-SQLAlchemy**, qui permet de manipuler les données à travers des modèles Python.
+
+Les principaux modèles sont :
+
+```text
+User
+Document
+Conversation
+Message
+```
+
+## 🧠 ChromaDB — Données vectorielles
+
+**ChromaDB** est utilisé comme base vectorielle pour le système RAG.
+
+Contrairement à MySQL, ChromaDB ne gère pas les comptes ou les conversations. Son rôle est de stocker les représentations vectorielles des fragments de documents afin de permettre une **recherche sémantique**.
+
+Chaque utilisateur dispose d'une collection vectorielle dédiée :
+
+```text
+user_<id>
+```
+
+Cette organisation permet d'isoler les connaissances documentaires entre les différents utilisateurs.
+
+### Rôle des différents composants
+
+| Composant                   | Rôle                                                                    |
+| --------------------------- | ----------------------------------------------------------------------- |
+| **MySQL**                   | Données applicatives structurées                                        |
+| **Flask-SQLAlchemy**        | Accès aux données MySQL                                                 |
+| **ChromaDB**                | Recherche vectorielle et stockage des données documentaires vectorisées |
+| **Flask**                   | Backend, API et logique applicative                                     |
+| **Hugging Face Router API** | Accès au modèle de langage                                              |
+| **RAG**                     | Récupération de contexte documentaire avant génération                  |
+
+---
+
+# 🔐 Isolation multi-utilisateur
+
+L'application applique une isolation des données à plusieurs niveaux.
+
+### Base relationnelle
+
+Les utilisateurs, documents, conversations et messages sont associés à un `user_id`.
+
+### Fichiers
+
+Les documents uploadés sont stockés dans un espace propre à chaque utilisateur :
+
+```text
+data/uploads/<user_id>/
+```
+
+### Base vectorielle
+
+Chaque utilisateur dispose de sa propre collection ChromaDB :
+
+```text
+user_<id>
+```
+
+### Contrôle d'accès
+
+Les endpoints vérifient côté serveur que les ressources demandées appartiennent bien à l'utilisateur connecté.
+
+Une tentative d'accès à une ressource appartenant à un autre utilisateur retourne une réponse `404` afin de ne pas révéler son existence.
+
+---
+
+# 🛡️ Sécurité
+
+Plusieurs mécanismes de sécurité ont été intégrés au projet :
+
+* Authentification avec **Flask-Login**.
+* Hachage des mots de passe avec **Werkzeug**.
+* Protection CSRF avec **Flask-WTF**.
+* Variables sensibles stockées dans l'environnement.
+* Clés API absentes du dépôt Git.
+* Sessions sécurisées.
+* Cookies `HttpOnly`.
+* Politique `SameSite`.
+* Validation des fichiers uploadés.
+* Limitation de la taille des fichiers.
+* Vérification des droits d'accès côté serveur.
+* Isolation des données entre utilisateurs.
+* Suppression en cascade des ressources associées.
+
+Pour un déploiement de production à grande échelle, des mécanismes supplémentaires pourraient être ajoutés, notamment :
+
+* Rate limiting.
+* En-têtes de sécurité et CSP.
+* Chiffrement au repos des documents sensibles.
+* Journalisation et monitoring.
+* Protection renforcée contre les prompt injections.
+* Déploiement HTTPS avec cookies `Secure`.
+
+---
+
+# 🏗️ Architecture du projet
+
+```text
 assistant-ia-dirigeants/
-
-├── app.py                          # point d'entrée Flask, routes /, /chat, /upload
-├── api_routes.py                   # API privée : conversations, documents, compte
-├── auth.py                         # blueprint authentification
+│
+├── app.py
+├── api_routes.py
+├── auth.py
 ├── config.py
-├── extensions.py                   # instances Flask-SQLAlchemy / Login / WTF
-├── forms.py                        # formulaires WTForms (login, register)
-├── models.py                       # modèles SQLAlchemy (User, Document, Conversation, Message)
+├── extensions.py
+├── forms.py
+├── models.py
 ├── requirements.txt
 ├── .env.example
-
+├── .gitignore
+│
 ├── modules/
 │   ├── llm/
 │   │   ├── hf_client.py
 │   │   └── system_prompt.py
+│   │
 │   ├── services/
-│   │   ├── document_parser.py      # extraction PDF/TXT/DOCX + nettoyage kerning
-│   │   ├── ingestion.py            # pipeline extraction → chunking → indexation
-│   │   ├── rag.py                  # détection d'intention + construction du contexte
-│   │   ├── user_files.py           # stockage des fichiers isolé par utilisateur
-│   │   └── vectorstore.py          # accès ChromaDB isolé par utilisateur
+│   │   ├── document_parser.py
+│   │   ├── ingestion.py
+│   │   ├── rag.py
+│   │   ├── user_files.py
+│   │   └── vectorstore.py
+│   │
 │   └── utils/
 │       └── chunking.py
-
+│
 ├── templates/
 │   ├── base.html
 │   ├── index.html
 │   ├── login.html
 │   └── register.html
-
+│
 ├── static/
 │   ├── css/
 │   └── js/
-
+│
+├── data/
+├── vectorstore/
+├── scripts/
+├── tests/
+│
 └── README.md
 ```
 
 ---
 
-# 12. Fonctionnalités principales
+# ⚙️ Backend
 
-## Backend
+Le backend est développé avec **Flask** et organisé autour de plusieurs composants modulaires.
 
-* Authentification (inscription, connexion, déconnexion)
-* Isolation multi-utilisateur (fichiers, base vectorielle, base relationnelle)
-* API conversationnelle
-* Pipeline RAG complet (extraction, chunking, indexation, recherche adaptative, génération)
-* Intégration IA via Hugging Face
-* Génération de réponses contextuelles et sourcées
-* Gestion des erreurs
-* Architecture modulaire
+### Responsabilités principales
 
-## Frontend
+* Authentification et gestion des sessions.
+* Gestion des utilisateurs.
+* Gestion des documents.
+* Gestion des conversations.
+* API conversationnelle.
+* Pipeline RAG.
+* Communication avec le modèle de langage.
+* Persistance des données.
+* Contrôle des permissions.
+* Gestion des erreurs.
 
-* Pages de connexion et d'inscription
-* Interface type assistant SaaS
-* Affichage dynamique des messages et des sources
-* Upload de documents intégré au chat
-* Support Markdown
-* Gestion multi-conversations
-* Historique persistant côté serveur
-* UX interactive moderne
+### Routes principales
 
----
+```text
+/chat
+/upload
 
-# 13. Prochaines étapes
-
-## Backend
-
-* Interface de gestion documentaire dédiée (liste, statut d'indexation, document actif)
-* Page Paramètres utilisateur (modification du profil, export de données)
-* Rate limiting sur les endpoints sensibles
-* Migrations de base versionnées (Flask-Migrate / Alembic) — actuellement `db.create_all()`
-* Suite de tests automatisés formalisée (pytest)
-* Déploiement production (HTTPS, WSGI, configuration durcie)
-
-## Frontend
-
-* Responsive mobile
-* Notifications utilisateur
-* Vue dédiée de gestion des documents (au-delà de l'upload via le chat)
-* Optimisation UX/UI continue
+/api/conversations
+/api/documents
+/api/account
+/api/rag/status
+```
 
 ---
 
-# 14. Installation et lancement
+# 🎨 Frontend
+
+Le frontend repose sur :
+
+* **HTML5**
+* **CSS3**
+* **JavaScript ES6 Modules**
+* **Marked.js**
+
+### Fonctionnalités
+
+* Interface conversationnelle.
+* Pages d'inscription et de connexion.
+* Sidebar des conversations.
+* Affichage dynamique des messages.
+* Rendu Markdown.
+* Affichage des sources documentaires.
+* Upload de documents.
+* Communication avec l'API Flask.
+* Gestion des conversations.
+* Interface de type SaaS.
+
+---
+
+# 🤖 Modèle de langage
+
+### Fournisseur
+
+**Hugging Face Router API**
+
+### Modèle par défaut
+
+```text
+Qwen/Qwen2.5-7B-Instruct
+```
+
+Le modèle est configurable via :
+
+```env
+HF_CHAT_MODEL=Qwen/Qwen2.5-7B-Instruct
+```
+
+Le token Hugging Face est fourni via :
+
+```env
+HF_TOKEN=...
+```
+
+Le modèle reçoit directement les questions générales ou, lorsqu'un contexte documentaire est disponible, la question accompagnée des passages récupérés par le système RAG.
+
+---
+
+# 🔄 Fonctionnement global
+
+## Sans document
+
+```text
+Utilisateur
+     ↓
+Question
+     ↓
+Flask
+     ↓
+Aucun contexte documentaire nécessaire
+     ↓
+Hugging Face Router
+     ↓
+LLM
+     ↓
+Réponse
+```
+
+## Avec document
+
+```text
+Utilisateur
+     ↓
+Question
+     ↓
+Flask
+     ↓
+Analyse de la requête
+     ↓
+Recherche dans ChromaDB
+     ↓
+Chunks pertinents
+     ↓
+Construction du contexte
+     ↓
+Hugging Face Router
+     ↓
+LLM
+     ↓
+Réponse + sources
+```
+
+---
+
+# 🧪 Tests et validation
+
+Le fonctionnement du projet a été validé à travers des tests ciblés et des tests manuels réalisés directement dans l'application.
+
+Les principaux scénarios vérifiés comprennent :
+
+* Questions précises sur les documents.
+* Synthèses globales.
+* Questions de suivi.
+* Questions ne nécessitant pas le RAG.
+* Import de fichiers PDF, DOCX et TXT.
+* Extraction de documents présentant des problèmes de mise en forme.
+* Isolation des données entre utilisateurs.
+* Contrôle d'accès aux conversations et documents.
+* Gestion de l'indexation documentaire.
+* Affichage correct des sources dans l'interface.
+
+Une attention particulière a été portée à la validation du comportement réel de l'application, notamment pour les scénarios où un pipeline RAG peut produire un résultat techniquement valide mais une réponse utilisateur incorrecte.
+
+---
+
+# 👨‍💻 Contributions
+
+Le projet a été réalisé dans le cadre d'une expérience professionnelle collaborative chez **Skill4Mind**.
+
+## Trésor — Backend, IA & Frontend
+
+Contributions principales :
+
+* Développement du **backend avec Flask**.
+* Développement et amélioration de l'**interface conversationnelle**.
+* Intégration des modèles de langage via **Hugging Face Router API**.
+* Implémentation de la **gestion des conversations**.
+* Mise en place du **rendu Markdown**.
+* Participation à l'architecture générale de l'application.
+* Participation à la structuration du projet.
+* Optimisation de l'expérience utilisateur.
+* Amélioration de la stabilité de l'application.
+
+## Équipe
+
+| Membre            | Contributions principales                                                     |
+| ----------------- | ----------------------------------------------------------------------------- |
+| **Nathan**        | Backend, API Flask, intégration IA, logique métier, architecture serveur, RAG |
+| **Trésor**        | Backend Flask, intégration IA, frontend, UX/UI, conversations, rendu Markdown |
+| **Pierre-Thyrel** | Tests, validation fonctionnelle, support technique                            |
+| **Lina**          | Documentation, organisation du projet, suivi des livrables                    |
+
+### Encadrement
+
+**Skill4Mind / ECE Paris**
+
+* Dr. Taha Ridène
+* M. Vincent Ferré
+
+---
+
+# 🛠️ Technologies utilisées
+
+| Domaine                       | Technologies            |
+| ----------------------------- | ----------------------- |
+| **Langage**                   | Python                  |
+| **Backend**                   | Flask                   |
+| **ORM / Base de données**     | Flask-SQLAlchemy, MySQL |
+| **Authentification**          | Flask-Login, Flask-WTF  |
+| **Intelligence artificielle** | LLM, RAG                |
+| **LLM Provider**              | Hugging Face Router API |
+| **Modèle**                    | Qwen2.5-7B-Instruct     |
+| **Base vectorielle**          | ChromaDB                |
+| **Traitement documentaire**   | pypdf, python-docx      |
+| **Frontend**                  | HTML5, CSS3, JavaScript |
+| **Markdown**                  | Marked.js               |
+
+---
+
+# 🚀 Installation
 
 ## 1. Cloner le projet
 
@@ -319,108 +591,169 @@ git clone https://github.com/NosProjets-Tech/assistant-ia-dirigeants.git
 cd assistant-ia-dirigeants
 ```
 
-## 2. Créer l'environnement virtuel et installer les dépendances
+## 2. Créer l'environnement virtuel
+
+### Windows
+
+```powershell
+python -m venv venv
+venv\Scripts\Activate.ps1
+```
+
+### macOS / Linux
 
 ```bash
 python -m venv venv
-
-# Windows
-venv\Scripts\Activate.ps1
-# macOS / Linux
 source venv/bin/activate
+```
 
+## 3. Installer les dépendances
+
+```bash
 pip install -r requirements.txt
 ```
 
-## 3. Configurer l'environnement
+## 4. Configurer l'environnement
+
+Copier le fichier `.env.example` :
 
 ```bash
 cp .env.example .env
 ```
 
-Éditez `.env` : renseignez `SECRET_KEY` (générée via la commande ci-dessous) et `HF_TOKEN` (clé API Hugging Face).
+Puis renseigner les variables nécessaires, notamment :
+
+```env
+SECRET_KEY=your_secret_key
+HF_TOKEN=your_huggingface_token
+DATABASE_URL=mysql+pymysql://user:password@localhost/database
+```
+
+Une clé secrète peut être générée avec :
 
 ```bash
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-## 4. Initialiser la base de données
+## 5. Initialiser la base de données
 
-```bash
-# Windows
+### Windows
+
+```powershell
 $env:FLASK_APP="app"
 python -m flask init-db
+```
 
-# macOS / Linux
+### macOS / Linux
+
+```bash
 export FLASK_APP=app
 python -m flask init-db
 ```
 
-## 5. Lancer l'application
+## 6. Lancer l'application
 
 ```bash
 python -m flask run --debug
 ```
 
-L'application est accessible sur `http://127.0.0.1:5000`. La page d'accueil redirige vers la connexion si aucune session active n'existe.
+L'application est alors disponible sur :
 
-### Réinitialiser le vector store (développement uniquement)
-
-```bash
-python -m flask reset-rag
+```text
+http://127.0.0.1:5000
 ```
 
-Supprime uniquement l'ancienne collection globale héritée d'avant l'isolation multi-utilisateur (`company_docs`). Les collections par utilisateur (`user_<id>`) et les fichiers uploadés ne sont jamais affectés par cette commande.
+---
+
+# ⚙️ Variables d'environnement
+
+| Variable        | Obligatoire | Description                        |
+| --------------- | ----------- | ---------------------------------- |
+| `SECRET_KEY`    | Oui         | Clé secrète Flask                  |
+| `HF_TOKEN`      | Oui         | Token d'accès Hugging Face         |
+| `HF_CHAT_MODEL` | Non         | Modèle LLM utilisé                 |
+| `DATABASE_URL`  | Oui         | URL de connexion MySQL             |
+| `CHUNK_SIZE`    | Non         | Taille des fragments documentaires |
+| `CHUNK_OVERLAP` | Non         | Chevauchement entre les fragments  |
+| `TOP_K`         | Non         | Nombre de chunks récupérés         |
+| `MAX_UPLOAD_MB` | Non         | Taille maximale d'un fichier       |
+
+Les autres paramètres sont disponibles dans `.env.example` et `config.py`.
 
 ---
 
-# 15. Variables d'environnement
+# 📊 État du projet
 
-| Variable | Obligatoire | Description |
-|---|---|---|
-| `SECRET_KEY` | Oui | Clé Flask pour les sessions et la protection CSRF |
-| `HF_TOKEN` | Oui | Token Hugging Face pour l'inférence du modèle |
-| `HF_CHAT_MODEL` | Non | Modèle utilisé (défaut : `Qwen/Qwen2.5-7B-Instruct`) |
-| `CHUNK_SIZE` / `CHUNK_OVERLAP` | Non | Paramètres de découpage des documents (défaut : 500 / 50) |
-| `TOP_K` | Non | Nombre de chunks récupérés pour une question précise (défaut : 4) |
-| `MAX_UPLOAD_MB` | Non | Taille maximale d'un fichier uploadé (défaut : 10) |
+## ✅ Projet finalisé
 
-Liste complète avec valeurs par défaut dans `.env.example` et `config.py`.
+Le projet a atteint ses objectifs dans le cadre de l'expérience réalisée chez **Skill4Mind** pendant le **Bachelor 2 à l'ECE Paris**.
 
----
+L'application dispose d'une architecture fonctionnelle comprenant :
 
-# 16. Tests réalisés
+* une interface conversationnelle ;
+* un système d'authentification ;
+* une gestion persistante des conversations ;
+* l'import et le traitement de documents ;
+* un pipeline RAG ;
+* une base vectorielle ChromaDB ;
+* une base relationnelle MySQL ;
+* une intégration LLM via Hugging Face Router API ;
+* une isolation des données entre utilisateurs ;
+* des réponses contextualisées et sourcées.
 
-Les corrections du pipeline RAG ont été validées par une combinaison de scripts ciblés et, systématiquement, de tests manuels dans l'interface réelle — un test purement scripté s'est révélé insuffisant à deux reprises pendant le développement (un cas passait les assertions automatiques tout en produisant une réponse incorrecte à l'écran).
-
-Couverture actuelle :
-
-* Récupération correcte sur requêtes de synthèse, questions précises et questions de suivi
-* Non-déclenchement du RAG sur salutations et questions hors-domaine
-* Isolation cross-utilisateur : accès refusé sur ressource d'autrui, accès autorisé sur sa propre ressource, absence de fuite de contenu entre comptes
-* Extraction robuste face à des PDF à mise en page non standard
-
-Une suite `pytest` formalisée (unitaire + intégration) reste à écrire pour automatiser cette couverture de façon pérenne.
+Le projet constitue ainsi une **preuve de concept fonctionnelle d'un assistant IA orienté entreprise**, combinant développement web, intelligence artificielle générative, traitement documentaire et recherche sémantique.
 
 ---
 
-# 17. Équipe et répartition des tâches
+# 🔮 Perspectives d'évolution
 
-Le projet a été réalisé dans un cadre académique collaboratif.
+Bien que le projet soit finalisé dans son cadre initial, plusieurs évolutions pourraient permettre de poursuivre son développement.
 
-| Membre        | Rôle principal                                                                                                               |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Nathan        | Backend, API Flask, intégration IA, logique métier, architecture serveur, préparation RAG                                    |
-| Trésor        | Backend (API Flask), intégration IA, Frontend, UX/UI, architecture JavaScript, gestion des conversations, persistance locale |
-| Pierre-Thyrel | Tests, validation fonctionnelle, support technique                                                                           |
-| Lina          | Documentation, organisation projet, suivi des livrables                                                                      |
+### Backend
 
-Encadrement : ECE Paris / Skills4Mind — Dr. Taha Ridène, M. Vincent Ferré (Groupe Asten).
+* Mise en place de migrations avec Flask-Migrate / Alembic.
+* Ajout d'un système de rate limiting.
+* Extension de la couverture des tests automatisés avec pytest.
+* Monitoring et journalisation.
+* Déploiement avec un serveur WSGI.
+* Renforcement de la protection contre les prompt injections.
+
+### Frontend
+
+* Interface responsive mobile.
+* Tableau de bord documentaire dédié.
+* Gestion avancée des documents.
+* Paramètres utilisateur.
+* Notifications.
+* Amélioration continue de l'UX/UI.
+
+### Intelligence artificielle
+
+* Évaluation automatique de la qualité des réponses RAG.
+* Amélioration du classement des passages récupérés.
+* Recherche hybride vectorielle et lexicale.
+* Support de modèles LLM supplémentaires.
+* Citations documentaires plus détaillées.
+* Gestion de plusieurs sources de connaissances.
 
 ---
 
-# 18. Conclusion
+# 🎓 Contexte professionnel et académique
 
-Le projet constitue une application fonctionnelle d'assistant IA destiné aux dirigeants, combinant une interface moderne, une authentification complète, une isolation stricte des données par utilisateur et un pipeline RAG opérationnel capable d'exploiter les documents internes de l'entreprise pour produire des réponses contextualisées, sourcées et vérifiables.
+**Entreprise :** Skill4Mind
+**Formation :** ECE Paris — Bachelor 2
+**Nature :** Stage / expérience en entreprise
+**Domaine :** Intelligence artificielle · Développement logiciel · LLM · RAG
 
-Il représente une base solide pour évoluer vers une interface de gestion documentaire avancée et une solution SaaS complète orientée entreprise, prête pour une mise en production après durcissement sécurité.
+### Encadrement
+
+* **Dr. Taha Ridène**
+* **M. Vincent Ferré**
+
+Cette expérience a permis de mettre en pratique des compétences en **développement backend et frontend, conception d'API, intelligence artificielle générative, traitement documentaire, recherche vectorielle, bases de données, architecture logicielle et expérience utilisateur**.
+
+---
+
+# 📄 Licence
+
+Projet réalisé dans le cadre d'une expérience en entreprise et d'un cursus académique.
